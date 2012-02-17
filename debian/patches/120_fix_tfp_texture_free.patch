@@ -1,0 +1,37 @@
+commit b2f1366c2825aeee3411c88db5c8e6b426191487
+Author: Bryce Harrington <bryce@canonical.com>
+Date:   Thu Jan 26 15:30:24 2012 -0800
+
+    Backport of the following patch to oneiric:
+    
+    commit d430e81c3287eba4ee84ca1639a23f92bbe22c8e
+    Author: Eric Anholt <eric@anholt.net>
+    Date:   Wed Sep 21 15:17:36 2011 -0700
+    
+        intel: Fix improper freeing of texture data in TFP.
+    
+        If there happened to be ->Data present, we assertion failed instead
+        of handling it correctly.
+    
+        Bugzilla: https://bugs.freedesktop.org/show_bug.cgi?id=35234
+        Acked-by: Kenneth Graunke <kenneth@whitecape.org>
+    
+    Most of the surrounding code has changed, so it's unclear if this change
+    alone is sufficient to resolve the problem.
+
+diff --git a/src/mesa/drivers/dri/intel/intel_tex_image.c b/src/mesa/drivers/dri/intel/intel_tex_image.c
+index 269faef..4d0968e 100644
+--- a/src/mesa/drivers/dri/intel/intel_tex_image.c
++++ b/src/mesa/drivers/dri/intel/intel_tex_image.c
+@@ -822,10 +822,7 @@ intelSetTexBuffer2(__DRIcontext *pDRICtx, GLint target,
+    texImage = _mesa_get_tex_image(&intel->ctx, texObj, target, level);
+    intelImage = intel_texture_image(texImage);
+ 
+-   if (intelImage->mt) {
+-      intel_miptree_release(intel, &intelImage->mt);
+-      assert(!texImage->Data);
+-   }
++   ctx->Driver.FreeTextureImageBuffer(ctx, image);
+    if (intelObj->mt)
+       intel_miptree_release(intel, &intelObj->mt);
+ 
