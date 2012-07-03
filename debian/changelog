@@ -1,4 +1,4 @@
-mesa (8.0.3-0ubuntu1) UNRELEASED; urgency=low
+mesa (8.0.3-0ubuntu1~precise~1) precise-proposed; urgency=low
 
   * New upstream stable release.
     + Fixes crash in intel_miptree_release()
