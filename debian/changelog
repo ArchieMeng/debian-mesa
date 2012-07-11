@@ -1,4 +1,4 @@
-mesa (8.0.3-0ubuntu1~precise~1) precise-proposed; urgency=low
+mesa (8.0.3-0ubuntu0.1) precise-proposed; urgency=low
 
   * New upstream stable release.
     + Fixes crash in intel_miptree_release()
@@ -20,7 +20,7 @@ mesa (8.0.3-0ubuntu1~precise~1) precise-proposed; urgency=low
     Cherrypick from mesa master.
     (LP: #981883)
 
- -- Robert Hooker <sarvatt@ubuntu.com>  Fri, 01 Jun 2012 13:01:35 -0400
+ -- Bryce Harrington <bryce@ubuntu.com>  Tue, 10 Jul 2012 18:45:26 -0700
 
 mesa (8.0.3-1) UNRELEASED; urgency=low
 
