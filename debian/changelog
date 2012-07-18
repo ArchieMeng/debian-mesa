@@ -35,7 +35,7 @@ mesa (8.0.2-2) unstable; urgency=low
 
  -- Cyril Brulebois <kibi@debian.org>  Tue, 01 May 2012 21:42:35 +0200
 
-mesa (8.0.2-0ubuntu4) quantal; urgency=low
+mesa (8.0.2-0ubuntu3.1) precise-proposed; urgency=low
 
   * Add 118_fix_rendering_from_textures.patch: Postpone the setup of the
     workaround render target miptree until update_renderbuffer time.
