@@ -1,0 +1,48 @@
+From da33bb5fde8f752c74ca4cd15c067c3a593bac97 Mon Sep 17 00:00:00 2001
+From: Kenneth Graunke <kenneth@whitecape.org>
+Date: Fri, 20 Jan 2012 03:33:40 -0800
+Subject: [PATCH] i965: Fix border color on Sandybridge and Ivybridge.
+
+While reading through the simulator, I found some interesting code that
+looks like it checks the sampler default color pointer against the bound
+set in STATE_BASE_ADDRESS.  On failure, it appears to program it to the
+base address itself.
+
+So I decided to try programming a legitimate bound, and lo and behold,
+border color worked.
+
++92 piglits on Sandybridge.  Also fixes Lightsmark on Ivybridge.
+
+NOTE: This is a candidate for stable release branches.
+
+Bugzilla: https://bugs.freedesktop.org/show_bug.cgi?id=28924
+Bugzilla: https://bugs.freedesktop.org/show_bug.cgi?id=38868
+Signed-off-by: Kenneth Graunke <kenneth@whitecape.org>
+Reviewed-by: Yuanhan Liu <yuanhan.liu@linux.intel.com>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+---
+ src/mesa/drivers/dri/i965/brw_misc_state.c |    8 +++++++-
+ 1 files changed, 7 insertions(+), 1 deletions(-)
+
+diff --git a/src/mesa/drivers/dri/i965/brw_misc_state.c b/src/mesa/drivers/dri/i965/brw_misc_state.c
+index 033c77c..fd3ac13 100644
+--- a/src/mesa/drivers/dri/i965/brw_misc_state.c
++++ b/src/mesa/drivers/dri/i965/brw_misc_state.c
+@@ -752,7 +752,13 @@ static void upload_state_base_address( struct brw_context *brw )
+ 		 1); /* Instruction base address: shader kernels (incl. SIP) */
+ 
+        OUT_BATCH(1); /* General state upper bound */
+-       OUT_BATCH(1); /* Dynamic state upper bound */
++       /* Dynamic state upper bound.  Although the documentation says that
++	* programming it to zero will cause it to be ignored, that is a lie.
++	* If this isn't programmed to a real bound, the sampler border color
++	* pointer is rejected, causing border color to mysteriously fail.
++	*/
++       OUT_RELOC(intel->batch.bo, I915_GEM_DOMAIN_INSTRUCTION, 0,
++		 intel->batch.bo->size | 1);
+        OUT_BATCH(1); /* Indirect object upper bound */
+        OUT_BATCH(1); /* Instruction access upper bound */
+        ADVANCE_BATCH();
+-- 
+1.7.9.1
+

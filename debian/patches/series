@@ -17,4 +17,7 @@
 117_handle_dri2connect_errors_when_indirect.diff
 118_fix_24bpp_software_renering.diff
 119_r600g_gnome_shell_rendering_fix.diff
-120_fix_tfp_texture_free.patch
+121-i965-fix-border-color.patch
+122-i965-apply-post-sync-workaround.patch
+123-i965-emit-depth-stalls-and-flushes.patch
+124-i965-last-render-target-select.patch

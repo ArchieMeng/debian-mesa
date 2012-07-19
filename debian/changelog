@@ -1,3 +1,20 @@
+mesa (7.11-0ubuntu3.2) oneiric-proposed; urgency=low
+
+  * Add patch series from upstream stable release to fix various issues:
+    - 121-i965-fix-border-color.patch: Fixes wrong colors in lightsmark
+      (LP: #966399)
+    - 122-i965-apply-post-sync-workaround.patch: Fixes GPU hangs in
+      Civilization 4, PlaneShift, Minecraft, Neverwinter Nights
+      (among others) on Sandybridge and Ivybridge. (LP: #966399)
+    - 123-i965-emit-depth-stalls-and-flushes.patch: Fixes GPU hangs when
+      running qgears2, lightsmark, and openarena on Ivybridge. (LP: #966399)
+    - 124-i965-last-render-target-select.patch: Fixes a GPU hang when
+      running Trine, or Unigine Heaven which crashes the desktop. (LP: #966399)
+  * Drop 120_fix_tfp_texture_free.patch from previous SRU, it was the
+    incorrect patch.
+
+ -- Robert Hooker <sarvatt@ubuntu.com>  Tue, 20 Mar 2012 10:44:16 -0400
+
 mesa (7.11-0ubuntu3.1) oneiric-proposed; urgency=low
 
   * Add 120_fix_tfp_texture_free.patch: Fixes segmentation fault in

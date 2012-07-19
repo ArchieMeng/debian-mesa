@@ -1,0 +1,40 @@
+From 439628318bfd4596d0d8129a0792d2c3ea849bb7 Mon Sep 17 00:00:00 2001
+From: Kenneth Graunke <kenneth@whitecape.org>
+Date: Fri, 21 Oct 2011 08:03:37 +0000
+Subject: i965: Apply post-sync non-zero workaround to homebrew workaround.
+
+In commit 3e5d3626, Eric added a homebrew workaround to fix GPU hangs in
+the Mesa "engine" demo and oglc's api-texcoord test.
+
+Unfortunately, his PIPE_CONTROL contains a Depth Stall, which
+necessitates the post-sync non-zero workaround,
+
+Fixes GPU hangs in Civilization 4, PlaneShift, Minecraft, Neverwinter
+Nights, 3DMMES, and hopefully Heroes of Newerth as well.
+
+Bugzilla: https://bugs.freedesktop.org/show_bug.cgi?id=40324
+Bugzilla: https://bugs.freedesktop.org/show_bug.cgi?id=41096
+Signed-off-by: Kenneth Graunke <kenneth@whitecape.org>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+Tested-by: Joel <k00_fol@k.kth.se> (Neverwinter Nights)
+Tested-by: brot <brot@minad.de> (Minecraft)
+Tested-by: Eric Anholt <eric@anholt.net> (3DMMES)
+Tested-by: Kenneth Graunke <kenneth@whitecape.org> (Civ 4 & PlaneShift)
+
+(cherry-picked from commit 3cc0a7be23ab603ed40d602595f673a44e079885)
+---
+diff --git a/src/mesa/drivers/dri/i965/gen6_vs_state.c b/src/mesa/drivers/dri/i965/gen6_vs_state.c
+index b30ae26..3e62dfd 100644
+--- a/src/mesa/drivers/dri/i965/gen6_vs_state.c
++++ b/src/mesa/drivers/dri/i965/gen6_vs_state.c
+@@ -178,6 +178,8 @@ upload_vs_state(struct brw_context *brw)
+     * bug reports that led to this workaround, and may be more than
+     * what is strictly required to avoid the issue.
+     */
++   intel_emit_post_sync_nonzero_flush(intel);
++
+    BEGIN_BATCH(4);
+    OUT_BATCH(_3DSTATE_PIPE_CONTROL);
+    OUT_BATCH(PIPE_CONTROL_DEPTH_STALL |
+--
+cgit v0.9.0.2-2-gbebe
