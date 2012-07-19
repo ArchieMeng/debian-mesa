@@ -1,3 +1,11 @@
+mesa (7.11-0ubuntu3.3) oneiric-proposed; urgency=low
+
+  * Add 125_nv50_nvc0_use_screen_for_flush_notifier.patch to fix es2_info
+    crash.  Backport from mesa 8.0.
+    (LP: #926918)
+
+ -- Bryce Harrington <bryce@ubuntu.com>  Thu, 19 Jul 2012 13:37:06 -0700
+
 mesa (7.11-0ubuntu3.2) oneiric-proposed; urgency=low
 
   * Add patch series from upstream stable release to fix various issues:
