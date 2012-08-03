@@ -14,3 +14,4 @@
 116_use_shared_galliumcore.diff
 117_nullptr_check_in_query_version.patch
 118_glsl_initialize_samplers.patch
+119_reduce_wm_thread_count_on_ivb_gt1.diff
