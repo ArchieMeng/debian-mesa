@@ -42,6 +42,14 @@ mesa (8.0.2-2) unstable; urgency=low
 
  -- Cyril Brulebois <kibi@debian.org>  Tue, 01 May 2012 21:42:35 +0200
 
+mesa (8.0.3+8.0.2-0ubuntu3.2) precise-proposed; urgency=low
+
+  * Use a fake upstream version due to a rejected update.
+  * Add 119_reduce_vm_thread_count_on_ivb_gt1.diff from upstream stable
+    branch. (LP: #1031784)
+
+ -- Timo Aaltonen <tjaalton@ubuntu.com>  Tue, 14 Aug 2012 07:11:03 +0300
+
 mesa (8.0.2-0ubuntu3.1) precise-proposed; urgency=low
 
   * Add 118_fix_rendering_from_textures.patch: Postpone the setup of the
