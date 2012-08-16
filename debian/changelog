@@ -1,3 +1,9 @@
+mesa (8.0.4-0ubuntu0.1) UNRELEASED; urgency=low
+
+  * New upstream bugfix release.
+
+ -- Timo Aaltonen <tjaalton@ubuntu.com>  Thu, 16 Aug 2012 10:23:26 +0300
+
 mesa (8.0.3-0ubuntu0.2) precise-proposed; urgency=low
 
   * Add 119_reduce_vm_thread_count_on_ivb_gt1.diff from upstream stable
