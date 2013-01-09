@@ -1,3 +1,13 @@
+mesa (8.0.4-0ubuntu0.2) precise-security; urgency=low
+
+  [ Steve Beattie ]
+  * SECURITY UPDATE: samplers array overflow (LP: #1046933)
+    - debian/patches/50-CVE-2012-2864.patch: ensure that more than
+      MAX_SAMPLERS are not used
+    - CVE-2012-2864
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Fri, 19 Oct 2012 09:04:04 -0400
+
 mesa (8.0.4-0ubuntu0.1) precise-proposed; urgency=low
 
   * New upstream stable release. (LP: #1019444)
