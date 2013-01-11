@@ -1,3 +1,21 @@
+mesa (8.0.4-0ubuntu0.3) precise-proposed; urgency=low
+
+  * Make some -dev packages coinstallable with the renamed stack (LP: #1098215)
+    - libgl1-mesa-dev, old opengl headers and symlink should be compatible still.
+    - libegl1-mesa-dev, similar story
+    - mesa-common-dev, installable unrenamed, but renamed version should be usable
+      as well when explicitly requested. This allows the renamed -dev packages to
+      keep working.
+    - libglu1-mesa-dev, has no replacement in the renamed stack,
+      and moved out as a separate package in mesa 9 or later. Not built in the
+      renamed stack, so unrenamed version is only option.
+    - libosmesa6-dev: no significant changes, and killed from the renamed stack.
+
+  * Explicitly not done:
+    - libgles1-mesa-dev, libgles2-mesa-dev, libgbm-dev: have no rdepends afaict.
+
+ -- Maarten Lankhorst <maarten.lankhorst@ubuntu.com>  Fri, 11 Jan 2013 01:45:47 +0100
+
 mesa (8.0.4-0ubuntu0.2) precise-security; urgency=low
 
   [ Steve Beattie ]
