@@ -1,3 +1,11 @@
+mesa (8.0.4-0ubuntu0.4) precise-proposed; urgency=low
+
+  * Bump libdrm-dev requirement to >= 2.4.34 to force building against new libdrm
+  * Add libdrm_nouveau1.diff to fix the build against the libdrm-dev from precise-updates.
+    - Fixes FTBFS (LP: #1130974)
+
+ -- Maarten Lankhorst <maarten.lankhorst@ubuntu.com>  Thu, 21 Feb 2013 14:39:41 +0100
+
 mesa (8.0.4-0ubuntu0.3) precise-proposed; urgency=low
 
   * Make some -dev packages coinstallable with the renamed stack (LP: #1098215)
