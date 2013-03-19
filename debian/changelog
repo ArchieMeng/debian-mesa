@@ -1,3 +1,11 @@
+mesa (9.0.3-0ubuntu0.1) quantal-proposed; urgency=low
+
+  * New upstream release. (LP: #1134466)
+    - Fixes GL_ANY_SAMPLES_PASSED_ARB handling in svn versions
+      of the Crystal Space game engine.
+
+ -- Maarten Lankhorst <maarten.lankhorst@ubuntu.com>  Thu, 14 Mar 2013 12:18:29 +0100
+
 mesa (9.0.2-0ubuntu0.1) quantal-proposed; urgency=low
 
   * Merge package from raring.
