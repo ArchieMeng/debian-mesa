@@ -1,3 +1,12 @@
+mesa (9.1.3-0ubuntu0.1) raring-proposed; urgency=low
+
+  * New upstream micro-release. (LP: #1183269)
+  * Drop revert-a64c1eb9b110.diff; it no longer applies.
+    - The patch reverted the regression where the unity dash appeared
+      very slowly, but should no longer be needed with the upstream fixes.
+
+ -- Maarten Lankhorst <maarten.lankhorst@ubuntu.com>  Thu, 23 May 2013 11:33:44 +0200
+
 mesa (9.1.3-0ubuntu1) saucy; urgency=low
 
   [ Robert Hooker ]
