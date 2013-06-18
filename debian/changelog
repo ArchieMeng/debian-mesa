@@ -1,3 +1,29 @@
+mesa (8.0.4-0ubuntu0.6) precise-security; urgency=low
+
+  * SECURITY UPDATE: denial of service and possible code execution via
+    out-of-bands access
+    - debian/patches/CVE-2013-1872.patch: check for out-of-bounds reads in
+      src/mesa/drivers/dri/i965/brw_fs.cpp,
+      src/mesa/drivers/dri/i965/brw_fs.h.
+    - CVE-2013-1872
+  * SECURITY UPDATE: denial of service and possible code execution via
+    integer overflows
+    - debian/patches/CVE-2013-1993.patch: check lengths in
+      src/glx/XF86dri.c.
+    - CVE-2013-1993
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Tue, 18 Jun 2013 15:22:44 -0400
+
+mesa (8.0.4-0ubuntu0.5) precise-security; urgency=low
+
+  * SECURITY UPDATE: denial of service or possible code execution via
+    buffer overflow
+    - debian/patches/CVE-2012-5129.patch: add bounds checking in
+      src/mesa/main/uniform_query.cpp.
+    - CVE-2012-5129
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Tue, 30 Apr 2013 15:02:56 -0700
+
 mesa (8.0.4-0ubuntu0.4) precise-proposed; urgency=low
 
   * Bump libdrm-dev requirement to >= 2.4.34 to force building against new libdrm

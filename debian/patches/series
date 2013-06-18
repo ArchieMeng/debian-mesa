@@ -17,3 +17,6 @@
 119_reduce_wm_thread_count_on_ivb_gt1.diff
 50-CVE-2012-2864.patch
 libdrm_nouveau1.diff
+CVE-2012-5129.patch
+CVE-2013-1872.patch
+CVE-2013-1993.patch
