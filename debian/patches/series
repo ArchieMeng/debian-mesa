@@ -15,3 +15,10 @@
 117-static-gallium.patch
 118-dricore-gallium.patch
 119-revert-wayland102.patch
+
+# Add missing haswell pci ids
+fix-hsw-crw-ids.diff
+add-vlv-ids.diff
+fix-hsw-gt3-names.diff
+fix-missing-gt3-id.diff
+add-more-reserved-hsw-ids.diff
