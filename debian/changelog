@@ -1,4 +1,4 @@
-mesa (9.0.3-0ubuntu0.2) UNRELEASED; urgency=low
+mesa (9.0.3-0ubuntu0.3) UNRELEASED; urgency=low
 
   * Added patches to add/fix Haswell pci-id's (LP: #1175533)
     - fix-hsw-crw-ids.diff
@@ -8,6 +8,23 @@ mesa (9.0.3-0ubuntu0.2) UNRELEASED; urgency=low
     - add-more-reserved-hsw-ids.diff
 
  -- Maarten Lankhorst <maarten.lankhorst@ubuntu.com>  Wed, 19 Jun 2013 13:33:09 +0200
+
+mesa (9.0.3-0ubuntu0.2) quantal-security; urgency=low
+
+  * SECURITY UPDATE: denial of service and possible code execution via
+    out-of-bands access
+    - debian/patches/CVE-2013-1872.patch: check for out-of-bounds reads in
+      src/mesa/drivers/dri/i965/brw_fs.cpp,
+      src/mesa/drivers/dri/i965/brw_fs.h,
+      src/mesa/drivers/dri/i965/brw_fs_visitor.cpp.
+    - CVE-2013-1872
+  * SECURITY UPDATE: denial of service and possible code execution via
+    integer overflows
+    - debian/patches/CVE-2013-1993.patch: check lengths in
+      src/glx/XF86dri.c.
+    - CVE-2013-1993
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Tue, 18 Jun 2013 14:05:02 -0400
 
 mesa (9.0.3-0ubuntu0.1) quantal-proposed; urgency=low
 
