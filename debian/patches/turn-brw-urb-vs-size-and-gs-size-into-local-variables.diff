@@ -1,0 +1,110 @@
+commit 210f2794f5c4fedc7400d810af43b46d8e2dff84
+Author: Kenneth Graunke <kenneth@whitecape.org>
+Date:   Tue Apr 2 21:11:50 2013 -0700
+
+    i965: Turn brw->urb.vs_size and gs_size into local variables.
+    
+    These variables are only used within a single function, so we may as
+    well make them local variables.
+    
+    Signed-off-by: Kenneth Graunke <kenneth@whitecape.org>
+    Reviewed-by: Paul Berry <stereotype441@gmail.com>
+    (cherry picked from commit 8cdb2d32ecd636a6d68840a68504c1fe1b14426b)
+
+diff --git a/src/mesa/drivers/dri/i965/brw_context.h b/src/mesa/drivers/dri/i965/brw_context.h
+index d718c15..910b73b 100644
+--- a/src/mesa/drivers/dri/i965/brw_context.h
++++ b/src/mesa/drivers/dri/i965/brw_context.h
+@@ -844,15 +844,6 @@ struct brw_context
+       GLuint nr_sf_entries;
+       GLuint nr_cs_entries;
+ 
+-      /* gen6:
+-       * The length of each URB entry owned by the VS (or GS), as
+-       * a number of 1024-bit (128-byte) rows.  Should be >= 1.
+-       *
+-       * gen7: Same meaning, but in 512-bit (64-byte) rows.
+-       */
+-      GLuint vs_size;
+-      GLuint gs_size;
+-
+       GLuint vs_start;
+       GLuint gs_start;
+       GLuint clip_start;
+diff --git a/src/mesa/drivers/dri/i965/gen6_urb.c b/src/mesa/drivers/dri/i965/gen6_urb.c
+index 2d69cbe..aa985de 100644
+--- a/src/mesa/drivers/dri/i965/gen6_urb.c
++++ b/src/mesa/drivers/dri/i965/gen6_urb.c
+@@ -54,7 +54,7 @@ gen6_upload_urb( struct brw_context *brw )
+    int total_urb_size = brw->urb.size * 1024; /* in bytes */
+ 
+    /* CACHE_NEW_VS_PROG */
+-   brw->urb.vs_size = MAX2(brw->vs.prog_data->urb_entry_size, 1);
++   unsigned vs_size = MAX2(brw->vs.prog_data->urb_entry_size, 1);
+ 
+    /* We use the same VUE layout for VS outputs and GS outputs (as it's what
+     * the SF and Clipper expect), so we can simply make the GS URB entry size
+@@ -62,14 +62,14 @@ gen6_upload_urb( struct brw_context *brw )
+     * where we have few vertex attributes and a lot of varyings, since the VS
+     * size is determined by the larger of the two.  For now, it's safe.
+     */
+-   brw->urb.gs_size = brw->urb.vs_size;
++   unsigned gs_size = vs_size;
+ 
+    /* Calculate how many entries fit in each stage's section of the URB */
+    if (brw->gs.prog_active) {
+-      nr_vs_entries = (total_urb_size/2) / (brw->urb.vs_size * 128);
+-      nr_gs_entries = (total_urb_size/2) / (brw->urb.gs_size * 128);
++      nr_vs_entries = (total_urb_size/2) / (vs_size * 128);
++      nr_gs_entries = (total_urb_size/2) / (gs_size * 128);
+    } else {
+-      nr_vs_entries = total_urb_size / (brw->urb.vs_size * 128);
++      nr_vs_entries = total_urb_size / (vs_size * 128);
+       nr_gs_entries = 0;
+    }
+ 
+@@ -87,14 +87,14 @@ gen6_upload_urb( struct brw_context *brw )
+    assert(brw->urb.nr_vs_entries >= 24);
+    assert(brw->urb.nr_vs_entries % 4 == 0);
+    assert(brw->urb.nr_gs_entries % 4 == 0);
+-   assert(brw->urb.vs_size < 5);
+-   assert(brw->urb.gs_size < 5);
++   assert(vs_size < 5);
++   assert(gs_size < 5);
+ 
+    BEGIN_BATCH(3);
+    OUT_BATCH(_3DSTATE_URB << 16 | (3 - 2));
+-   OUT_BATCH(((brw->urb.vs_size - 1) << GEN6_URB_VS_SIZE_SHIFT) |
++   OUT_BATCH(((vs_size - 1) << GEN6_URB_VS_SIZE_SHIFT) |
+ 	     ((brw->urb.nr_vs_entries) << GEN6_URB_VS_ENTRIES_SHIFT));
+-   OUT_BATCH(((brw->urb.gs_size - 1) << GEN6_URB_GS_SIZE_SHIFT) |
++   OUT_BATCH(((gs_size - 1) << GEN6_URB_GS_SIZE_SHIFT) |
+ 	     ((brw->urb.nr_gs_entries) << GEN6_URB_GS_ENTRIES_SHIFT));
+    ADVANCE_BATCH();
+ 
+diff --git a/src/mesa/drivers/dri/i965/gen7_urb.c b/src/mesa/drivers/dri/i965/gen7_urb.c
+index 481497b..dafe1ad 100644
+--- a/src/mesa/drivers/dri/i965/gen7_urb.c
++++ b/src/mesa/drivers/dri/i965/gen7_urb.c
+@@ -82,9 +82,9 @@ gen7_upload_urb(struct brw_context *brw)
+    int handle_region_size = (brw->urb.size - 16) * 1024; /* bytes */
+ 
+    /* CACHE_NEW_VS_PROG */
+-   brw->urb.vs_size = MAX2(brw->vs.prog_data->urb_entry_size, 1);
++   unsigned vs_size = MAX2(brw->vs.prog_data->urb_entry_size, 1);
+ 
+-   int nr_vs_entries = handle_region_size / (brw->urb.vs_size * 64);
++   int nr_vs_entries = handle_region_size / (vs_size * 64);
+    if (nr_vs_entries > brw->urb.max_vs_entries)
+       nr_vs_entries = brw->urb.max_vs_entries;
+ 
+@@ -100,8 +100,7 @@ gen7_upload_urb(struct brw_context *brw)
+    assert(!brw->gs.prog_active);
+ 
+    gen7_emit_vs_workaround_flush(intel);
+-   gen7_emit_urb_state(brw, brw->urb.nr_vs_entries, brw->urb.vs_size,
+-                       brw->urb.vs_start);
++   gen7_emit_urb_state(brw, brw->urb.nr_vs_entries, vs_size, brw->urb.vs_start);
+ }
+ 
+ void

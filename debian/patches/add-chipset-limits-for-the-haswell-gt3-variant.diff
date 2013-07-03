@@ -1,0 +1,29 @@
+commit ed7fa63bbd375aaf6f1ed179ecd7b74f3a752c64
+Author: Kenneth Graunke <kenneth@whitecape.org>
+Date:   Wed Mar 7 09:58:15 2012 -0800
+
+    i965: Add chipset limits for the Haswell GT3 variant.
+    
+    NOTE: This is a candidate for stable branches.
+    
+    Signed-off-by: Kenneth Graunke <kenneth@whitecape.org>
+    Signed-off-by: Eugeni Dodonov <eugeni.dodonov@intel.com>
+    (cherry picked from commit d0b82b1add5d1d1419d4390a3f7c584b6ee7d92c)
+
+diff --git a/src/mesa/drivers/dri/i965/brw_context.c b/src/mesa/drivers/dri/i965/brw_context.c
+index 19497e9..0b69b53 100644
+--- a/src/mesa/drivers/dri/i965/brw_context.c
++++ b/src/mesa/drivers/dri/i965/brw_context.c
+@@ -293,6 +293,12 @@ brwCreateContext(int api,
+ 	 brw->urb.size = 256;
+ 	 brw->urb.max_vs_entries = 1664;
+ 	 brw->urb.max_gs_entries = 640;
++      } else if (intel->gt == 3) {
++	 brw->max_wm_threads = 408;
++	 brw->max_vs_threads = 280;
++	 brw->urb.size = 512;
++	 brw->urb.max_vs_entries = 1664;
++	 brw->urb.max_gs_entries = 640;
+       }
+    } else if (intel->gen == 7) {
+       if (intel->gt == 1) {

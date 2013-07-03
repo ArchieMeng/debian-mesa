@@ -1,3 +1,13 @@
+mesa (9.0.3-0ubuntu0.4) quantal-proposed; urgency=low
+
+  * Added patches to fix a GPU hang with GT3 (LP: #1197316)
+    - add-chipset-limits-for-the-haswell-gt3-variant.diff
+    - turn-brw-urb-vs-size-and-gs-size-into-local-variables.diff
+    - update-urb-partitioning-code-for-haswell-gt3-variant.diff
+    - use-a-variable-for-the-push-constant-size-in-kb.diff
+
+ -- Timo Aaltonen <tjaalton@ubuntu.com>  Wed, 03 Jul 2013 11:03:21 +0300
+
 mesa (9.0.3-0ubuntu0.3) quantal-proposed; urgency=low
 
   * Added patches to add/fix Haswell pci-id's (LP: #1175533)

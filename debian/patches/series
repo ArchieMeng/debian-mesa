@@ -24,3 +24,8 @@ add-vlv-ids.diff
 fix-hsw-gt3-names.diff
 fix-missing-gt3-id.diff
 add-more-reserved-hsw-ids.diff
+
+turn-brw-urb-vs-size-and-gs-size-into-local-variables.diff
+use-a-variable-for-the-push-constant-size-in-kb.diff
+update-urb-partitioning-code-for-haswell-gt3-variant.diff
+add-chipset-limits-for-the-haswell-gt3-variant.diff
