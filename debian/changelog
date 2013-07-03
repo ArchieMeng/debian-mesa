@@ -1,3 +1,12 @@
+mesa (9.1.4-0ubuntu0.1) UNRELEASED; urgency=low
+
+  * New upstream bugfix release 9.1.4. (LP: #1197363)
+    - fix a GPU hang with GT3. (LP: #1197316)
+  * Dropped patches that are included in this release
+  * revert-a64c1eb9b110.diff: updated.
+
+ -- Timo Aaltonen <tjaalton@ubuntu.com>  Wed, 03 Jul 2013 13:54:33 +0300
+
 mesa (9.1.3-0ubuntu0.4) raring-proposed; urgency=low
 
   * Added patches to add/fix Haswell pci-id's (LP: #1175533)
