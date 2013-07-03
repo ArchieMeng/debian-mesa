@@ -1,4 +1,4 @@
-mesa (9.1.4-0ubuntu0.1) UNRELEASED; urgency=low
+mesa (9.1.4-0ubuntu0.1) raring-proposed; urgency=low
 
   * New upstream bugfix release 9.1.4. (LP: #1197363)
     - fix a GPU hang with GT3. (LP: #1197316)
