@@ -94,6 +94,24 @@ _mesa_ast_to_hir(exec_list *instructions, struct _mesa_glsl_parse_state *state)
    detect_conflicting_assignments(state, instructions);
 
    state->toplevel_ir = NULL;
+
+   /* Move all of the variable declarations to the front of the IR list, and
+    * reverse the order.  This has the (intended!) side effect that vertex
+    * shader inputs and fragment shader outputs will appear in the IR in the
+    * same order that they appeared in the shader code.  This results in the
+    * locations being assigned in the declared order.  Many (arguably buggy)
+    * applications depend on this behavior, and it matches what nearly all
+    * other drivers do.
+    */
+   foreach_list_safe(node, instructions) {
+      ir_variable *const var = ((ir_instruction *) node)->as_variable();
+
+      if (var == NULL)
+         continue;
+
+      var->remove();
+      instructions->push_head(var);
+   }
 }
 
 
@@ -1886,12 +1904,6 @@ process_array_type(YYLTYPE *loc, const glsl_type *base, ast_node *array_size,
 	    }
 	 }
       }
-   } else if (state->es_shader) {
-      /* Section 10.17 of the GLSL ES 1.00 specification states that unsized
-       * array declarations have been removed from the language.
-       */
-      _mesa_glsl_error(loc, state, "unsized array declarations are not "
-		       "allowed in GLSL ES 1.00.");
    }
 
    return glsl_type::get_array_instance(base, length);
@@ -3020,6 +3032,33 @@ ast_declarator_list::hir(exec_list *instructions,
 	 _mesa_glsl_error(& loc, state,
 			  "const declaration of `%s' must be initialized",
 			  decl->identifier);
+      }
+
+      if (state->es_shader) {
+	 const glsl_type *const t = (earlier == NULL)
+	    ? var->type : earlier->type;
+
+         if (t->is_array() && t->length == 0)
+            /* Section 10.17 of the GLSL ES 1.00 specification states that
+             * unsized array declarations have been removed from the language.
+             * Arrays that are sized using an initializer are still explicitly
+             * sized.  However, GLSL ES 1.00 does not allow array
+             * initializers.  That is only allowed in GLSL ES 3.00.
+             *
+             * Section 4.1.9 (Arrays) of the GLSL ES 3.00 spec says:
+             *
+             *     "An array type can also be formed without specifying a size
+             *     if the definition includes an initializer:
+             *
+             *         float x[] = float[2] (1.0, 2.0);     // declares an array of size 2
+             *         float y[] = float[] (1.0, 2.0, 3.0); // declares an array of size 3
+             *
+             *         float a[5];
+             *         float b[] = a;"
+             */
+            _mesa_glsl_error(& loc, state,
+                             "unsized array declarations are not allowed in "
+                             "GLSL ES");
       }
 
       /* If the declaration is not a redeclaration, there are a few additional

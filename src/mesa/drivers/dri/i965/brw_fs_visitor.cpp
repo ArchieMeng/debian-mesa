@@ -786,7 +786,13 @@ fs_visitor::emit_texture_gen4(ir_texture *ir, fs_reg dst, fs_reg coordinate,
 	 emit(MOV(fs_reg(MRF, base_mrf + mlen + i), coordinate));
 	 coordinate.reg_offset++;
       }
-      /* gen4's SIMD8 sampler always has the slots for u,v,r present. */
+
+      /* gen4's SIMD8 sampler always has the slots for u,v,r present.
+       * the unused slots must be zeroed.
+       */
+      for (int i = ir->coordinate->type->vector_elements; i < 3; i++) {
+         emit(MOV(fs_reg(MRF, base_mrf + mlen + i), fs_reg(0.0f)));
+      }
       mlen += 3;
 
       if (ir->op == ir_tex) {
@@ -808,6 +814,10 @@ fs_visitor::emit_texture_gen4(ir_texture *ir, fs_reg dst, fs_reg coordinate,
       for (int i = 0; i < ir->coordinate->type->vector_elements; i++) {
 	 emit(MOV(fs_reg(MRF, base_mrf + mlen + i), coordinate));
 	 coordinate.reg_offset++;
+      }
+      /* zero the others. */
+      for (int i = ir->coordinate->type->vector_elements; i<3; i++) {
+         emit(MOV(fs_reg(MRF, base_mrf + mlen + i), fs_reg(0.0f)));
       }
       /* gen4's SIMD8 sampler always has the slots for u,v,r present. */
       mlen += 3;
@@ -2127,8 +2137,7 @@ fs_visitor::emit_fb_writes()
    if (header_present) {
       src0_alpha_to_render_target = intel->gen >= 6 &&
 				    !do_dual_src &&
-				    c->key.nr_color_regions > 1 &&
-				    c->key.sample_alpha_to_coverage;
+                                    c->key.replicate_alpha;
       /* m2, m3 header */
       nr += 2;
    }
