@@ -1,8 +1,8 @@
-mesa (9.1.7-1ubuntu1) UNRELEASED; urgency=low
+mesa (9.1.7-1ubuntu1) raring-proposed; urgency=low
 
   * Merge from released unstable.
 
- -- Maarten Lankhorst <maarten.lankhorst@ubuntu.com>  Mon, 07 Oct 2013 12:33:25 +0200
+ -- Maarten Lankhorst <maarten.lankhorst@ubuntu.com>  Mon, 07 Oct 2013 12:34:40 +0200
 
 mesa (9.1.7-1) unstable; urgency=low
 
