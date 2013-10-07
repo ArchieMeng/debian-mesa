@@ -1,6 +1,6 @@
 mesa (9.1.7-1ubuntu1) raring-proposed; urgency=low
 
-  * Merge from released unstable.
+  * Merge from released unstable, new upstream release. (LP: #1236340)
 
  -- Maarten Lankhorst <maarten.lankhorst@ubuntu.com>  Mon, 07 Oct 2013 12:34:40 +0200
 
