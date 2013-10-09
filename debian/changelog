@@ -1,3 +1,9 @@
+mesa (9.1.7-1ubuntu2) raring-proposed; urgency=low
+
+  * Fix build by installing drirc again.
+
+ -- Maarten Lankhorst <maarten.lankhorst@ubuntu.com>  Wed, 09 Oct 2013 11:47:40 +0200
+
 mesa (9.1.7-1ubuntu1) raring-proposed; urgency=low
 
   * Merge from released unstable, new upstream release. (LP: #1236340)
