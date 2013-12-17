@@ -1,3 +1,9 @@
+mesa (8.0.4-0ubuntu0.7) precise-proposed; urgency=low
+
+  * Allow lts-saucy and lts-trusty to satisfy some depends too. (LP: #1253041)
+
+ -- Maarten Lankhorst <maarten.lankhorst@ubuntu.com>  Tue, 17 Dec 2013 10:36:12 +0100
+
 mesa (8.0.4-0ubuntu0.6) precise-security; urgency=low
 
   * SECURITY UPDATE: denial of service and possible code execution via
