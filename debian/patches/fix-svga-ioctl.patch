@@ -1,0 +1,64 @@
+commit 2d6206140afe9ecb551822ea00c36eeeef7edfbf
+Author: Thomas Hellstrom <thellstrom@vmware.com>
+Date:   Wed Sep 3 11:14:51 2014 +0200
+
+    winsys/svga: Fix incorrect type usage in IOCTL v2
+    
+    While similar in layout, the size of the SVGA3dSize type may be smaller than
+    the struct drm_vmw_size type that is part of the ioctl interface. The kernel
+    driver could accordingly overwrite a memory area following the size variable
+    on the stack. Typically that would be another local variable, causing
+    breakage in, for example, ubuntu 12.04.5 where the handle local variable
+    becomes overwritten.
+    
+    v2: Fix whitespace errors
+    
+    Signed-off-by: Thomas Hellstrom <thellstrom@vmware.com>
+    Reviewed-by: Jakob Bornecrantz <jakob@vmware.com>
+    Cc: "10.1 10.2 10.3" <mesa-stable@lists.freedesktop.org>
+
+diff --git a/src/gallium/winsys/svga/drm/vmw_screen_dri.c b/src/gallium/winsys/svga/drm/vmw_screen_dri.c
+index 79a1b3e..9f33590 100644
+--- a/src/gallium/winsys/svga/drm/vmw_screen_dri.c
++++ b/src/gallium/winsys/svga/drm/vmw_screen_dri.c
+@@ -238,7 +238,7 @@ out_mip:
+ 
+ static struct svga_winsys_surface *
+ vmw_drm_surface_from_handle(struct svga_winsys_screen *sws,
+-			    struct winsys_handle *whandle,
++                            struct winsys_handle *whandle,
+ 			    SVGA3dSurfaceFormat *format)
+ {
+     struct vmw_svga_winsys_surface *vsrf;
+@@ -248,7 +248,8 @@ vmw_drm_surface_from_handle(struct svga_winsys_screen *sws,
+     struct drm_vmw_surface_arg *req = &arg.req;
+     struct drm_vmw_surface_create_req *rep = &arg.rep;
+     uint32_t handle = 0;
+-    SVGA3dSize size;
++    struct drm_vmw_size size;
++    SVGA3dSize base_size;
+     int ret;
+     int i;
+ 
+@@ -274,7 +275,7 @@ vmw_drm_surface_from_handle(struct svga_winsys_screen *sws,
+ 
+     memset(&arg, 0, sizeof(arg));
+     req->sid = handle;
+-    rep->size_addr = (size_t)&size;
++    rep->size_addr = (unsigned long)&size;
+ 
+     ret = drmCommandWriteRead(vws->ioctl.drm_fd, DRM_VMW_REF_SURFACE,
+ 			      &arg, sizeof(arg));
+@@ -324,7 +325,11 @@ vmw_drm_surface_from_handle(struct svga_winsys_screen *sws,
+     *format = rep->format;
+ 
+     /* Estimate usage, for early flushing. */
+-    vsrf->size = svga3dsurface_get_serialized_size(rep->format, size,
++
++    base_size.width = size.width;
++    base_size.height = size.height;
++    base_size.depth = size.depth;
++    vsrf->size = svga3dsurface_get_serialized_size(rep->format, base_size,
+                                                    rep->mip_levels[0],
+                                                    FALSE);
+ 
