@@ -1,3 +1,9 @@
+mesa (10.3.2-0ubuntu0.1) utopic-proposed; urgency=medium
+
+  * Copy back to utopic. (LP: #1384289)
+
+ -- Maarten Lankhorst <maarten.lankhorst@ubuntu.com>  Tue, 28 Oct 2014 09:59:15 +0100
+
 mesa (10.3.2-0ubuntu1) vivid; urgency=medium
 
   * Merge from unreleased debian-unstable.
