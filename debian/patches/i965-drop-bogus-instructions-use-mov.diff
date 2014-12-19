@@ -1,0 +1,69 @@
+commit 850e372fc7ff3377d7ffdf825d5ebcdd72beee1b
+Author: Kenneth Graunke <kenneth@whitecape.org>
+Date:   Wed Jan 29 14:16:27 2014 -0800
+
+    i965: Drop bogus F32TO16/F16TO32 instructions on Broadwell - use MOV.
+    
+    Broadwell removed the F32TO16 and F16TO32 instructions.  However, it has
+    actual support for HF values, so they're actually just MOV.
+    
+    Fixes vs-packHalf2x16 and vs-unpackHalf2x16 tests (both the ARB
+    extension and ES 3.0 variants).
+    
+    v2: Emulate F32TO16's align16 zeroing bug, since Chad's front end code
+        relies on it happening.  We can probably refactor this code to be
+        better later.
+    
+    Signed-off-by: Kenneth Graunke <kenneth@whitecape.org>
+    Reviewed-by: Eric Anholt <eric@anholt.net>
+
+diff --git a/src/mesa/drivers/dri/i965/gen8_fs_generator.cpp b/src/mesa/drivers/dri/i965/gen8_fs_generator.cpp
+index e5fa3d2..0e1214d 100644
+--- a/src/mesa/drivers/dri/i965/gen8_fs_generator.cpp
++++ b/src/mesa/drivers/dri/i965/gen8_fs_generator.cpp
+@@ -920,10 +920,10 @@ gen8_fs_generator::generate_code(exec_list *instructions)
+          break;
+ 
+       case BRW_OPCODE_F32TO16:
+-         F32TO16(dst, src[0]);
++         MOV(retype(dst, BRW_REGISTER_TYPE_HF), src[0]);
+          break;
+       case BRW_OPCODE_F16TO32:
+-         F16TO32(dst, src[0]);
++         MOV(dst, retype(src[0], BRW_REGISTER_TYPE_HF));
+          break;
+ 
+       case BRW_OPCODE_CMP:
+diff --git a/src/mesa/drivers/dri/i965/gen8_generator.cpp b/src/mesa/drivers/dri/i965/gen8_generator.cpp
+index 1e2ac09..ca38af6 100644
+--- a/src/mesa/drivers/dri/i965/gen8_generator.cpp
++++ b/src/mesa/drivers/dri/i965/gen8_generator.cpp
+@@ -154,8 +154,6 @@ ALU2(ASR)
+ ALU3(BFE)
+ ALU2(BFI1)
+ ALU3(BFI2)
+-ALU1(F32TO16)
+-ALU1(F16TO32)
+ ALU1(BFREV)
+ ALU1(CBIT)
+ ALU2_ACCUMULATE(ADDC)
+diff --git a/src/mesa/drivers/dri/i965/gen8_vec4_generator.cpp b/src/mesa/drivers/dri/i965/gen8_vec4_generator.cpp
+index 7ed5d2a..7f6b209 100644
+--- a/src/mesa/drivers/dri/i965/gen8_vec4_generator.cpp
++++ b/src/mesa/drivers/dri/i965/gen8_vec4_generator.cpp
+@@ -586,11 +586,13 @@ gen8_vec4_generator::generate_vec4_instruction(vec4_instruction *instruction,
+       break;
+ 
+    case BRW_OPCODE_F32TO16:
+-      F32TO16(dst, src[0]);
++      /* Emulate the Gen7 zeroing bug. */
++      MOV(retype(dst, BRW_REGISTER_TYPE_UD), brw_imm_ud(0u));
++      MOV(retype(dst, BRW_REGISTER_TYPE_HF), src[0]);
+       break;
+ 
+    case BRW_OPCODE_F16TO32:
+-      F16TO32(dst, src[0]);
++      MOV(dst, retype(src[0], BRW_REGISTER_TYPE_HF));
+       break;
+ 
+    case BRW_OPCODE_LRP:

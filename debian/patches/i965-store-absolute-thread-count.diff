@@ -1,0 +1,51 @@
+commit a5e54c91a3b73551609efea1f6f31eaae26281ea
+Author: Kenneth Graunke <kenneth@whitecape.org>
+Date:   Tue Feb 4 22:18:03 2014 -0800
+
+    i965: Store absolute thread count in max_wm_threads on Broadwell.
+    
+    In the past, 3DSTATE_PS took an absolute number of threads.  Conversely,
+    on Broadwell you always program 64, and it implicitly scales based on
+    the GT-level with no special programming.  So, I stored 64 in
+    brw_device_info::max_wm_threads.
+    
+    However, I didn't realize that we also use max_wm_threads to compute the
+    size of the scratch space buffer.  In that case, we really need the
+    absolute number of threads.
+    
+    This patch hardcodes 3DSTATE_PS to use the value it expects, and changes
+    max_wm_threads back to a (completely fake) absolute thread count (once
+    again copied from Haswell).
+    
+    Signed-off-by: Kenneth Graunke <kenneth@whitecape.org>
+    Reviewed-by: Eric Anholt <eric@anholt.net>
+
+diff --git a/src/mesa/drivers/dri/i965/brw_device_info.c b/src/mesa/drivers/dri/i965/brw_device_info.c
+index d931091..e4c110d 100644
+--- a/src/mesa/drivers/dri/i965/brw_device_info.c
++++ b/src/mesa/drivers/dri/i965/brw_device_info.c
+@@ -201,7 +201,7 @@ static const struct brw_device_info brw_device_info_hsw_gt3 = {
+    .has_pln = true,                                 \
+    .max_vs_threads = 280,                           \
+    .max_gs_threads = 256,                           \
+-   .max_wm_threads = 64,  /* threads per PSD */     \
++   .max_wm_threads = 408,                           \
+    .urb = {                                         \
+       .size = 128,                                  \
+       .min_vs_entries = 64,                         \
+diff --git a/src/mesa/drivers/dri/i965/gen8_ps_state.c b/src/mesa/drivers/dri/i965/gen8_ps_state.c
+index c2810bb..561fc96 100644
+--- a/src/mesa/drivers/dri/i965/gen8_ps_state.c
++++ b/src/mesa/drivers/dri/i965/gen8_ps_state.c
+@@ -174,7 +174,10 @@ upload_ps_state(struct brw_context *brw)
+    if (ctx->Shader.CurrentProgram[MESA_SHADER_FRAGMENT] == NULL)
+       dw3 |= GEN7_PS_FLOATING_POINT_MODE_ALT;
+ 
+-   dw6 |= (brw->max_wm_threads - 2) << HSW_PS_MAX_THREADS_SHIFT;
++   /* 3DSTATE_PS expects the number of threads per PSD, which is always 64;
++    * it implicitly scales for different GT levels (which have some # of PSDs).
++    */
++   dw6 |= (64 - 2) << HSW_PS_MAX_THREADS_SHIFT;
+ 
+    /* CACHE_NEW_WM_PROG */
+    if (brw->wm.prog_data->base.nr_params > 0)

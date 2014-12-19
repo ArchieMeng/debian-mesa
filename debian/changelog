@@ -1,3 +1,14 @@
+mesa (10.1.3-0ubuntu0.3) UNRELEASED; urgency=medium
+
+  * Backport Braswell support (LP: #1404217)
+    - i965-add-cherryview-support.diff
+    - i965-drop-bogus-instructions-use-mov.diff
+    - i965-initialize-more-device-info-fields-chv.diff
+    - i965-store-absolute-thread-count.diff
+    - i965-use-mov-not-or-for-setting-urb.diff
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Thu, 18 Dec 2014 07:22:35 +0200
+
 mesa (10.1.3-0ubuntu0.2) trusty; urgency=medium
 
   [ Timo Aaltonen ]

@@ -16,3 +16,8 @@ enable-bdw.diff
 fix-unity-on-bdw.diff
 fix-gpu-hangs-on-bdw.diff
 fix-svga-ioctl.patch
+i965-add-cherryview-support.diff
+i965-initialize-more-device-info-fields-chv.diff
+i965-use-mov-not-or-for-setting-urb.diff
+i965-store-absolute-thread-count.diff
+i965-drop-bogus-instructions-use-mov.diff

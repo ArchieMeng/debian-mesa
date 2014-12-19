@@ -1,0 +1,62 @@
+commit 9b6b084eb7b10d006b44e3cd22585fc3e39e0c00
+Author: Kenneth Graunke <kenneth@whitecape.org>
+Date:   Tue Feb 18 16:39:11 2014 -0800
+
+    i965: Add Cherryview support.
+    
+    Based on a patch by Ville Syrjälä.
+    
+    As usual, these are placeholder values; actual values will come later.
+    
+    Signed-off-by: Kenneth Graunke <kenneth@whitecape.org>
+
+diff --git a/include/pci_ids/i965_pci_ids.h b/include/pci_ids/i965_pci_ids.h
+index a71f6d4..cf0c904 100644
+--- a/include/pci_ids/i965_pci_ids.h
++++ b/include/pci_ids/i965_pci_ids.h
+@@ -109,3 +109,7 @@ CHIPSET(0x162A, bdw_gt3, "Intel(R) Broadwell")
+ CHIPSET(0x162B, bdw_gt3, "Intel(R) Broadwell")
+ CHIPSET(0x162D, bdw_gt3, "Intel(R) Broadwell")
+ CHIPSET(0x162E, bdw_gt3, "Intel(R) Broadwell")
++CHIPSET(0x22B0, chv,     "Intel(R) Cherryview")
++CHIPSET(0x22B1, chv,     "Intel(R) Cherryview")
++CHIPSET(0x22B2, chv,     "Intel(R) Cherryview")
++CHIPSET(0x22B3, chv,     "Intel(R) Cherryview")
+diff --git a/src/mesa/drivers/dri/i965/brw_device_info.c b/src/mesa/drivers/dri/i965/brw_device_info.c
+index e4c110d..1fc8ef4 100644
+--- a/src/mesa/drivers/dri/i965/brw_device_info.c
++++ b/src/mesa/drivers/dri/i965/brw_device_info.c
+@@ -221,6 +221,21 @@ static const struct brw_device_info brw_device_info_bdw_gt3 = {
+    GEN8_FEATURES, .gt = 3,
+ };
+ 
++/* Thread counts and URB limits are placeholders, and may not be accurate.
++ * These were copied from Haswell GT1, above.
++ */
++static const struct brw_device_info brw_device_info_chv = {
++   GEN8_FEATURES, .is_cherryview = 1, .gt = 1,
++   .has_llc = false,
++   .max_vs_threads = 70,
++   .max_gs_threads = 70,
++   .max_wm_threads = 102,
++   .urb = {
++      .max_vs_entries = 640,
++      .max_gs_entries = 256,
++   }
++};
++
+ const struct brw_device_info *
+ brw_get_device_info(int devid)
+ {
+diff --git a/src/mesa/drivers/dri/i965/brw_device_info.h b/src/mesa/drivers/dri/i965/brw_device_info.h
+index 66ec935..e506beb 100644
+--- a/src/mesa/drivers/dri/i965/brw_device_info.h
++++ b/src/mesa/drivers/dri/i965/brw_device_info.h
+@@ -34,6 +34,7 @@ struct brw_device_info
+    bool is_ivybridge;
+    bool is_baytrail;
+    bool is_haswell;
++   bool is_cherryview;
+ 
+    bool has_hiz_and_separate_stencil;
+    bool must_use_separate_stencil;

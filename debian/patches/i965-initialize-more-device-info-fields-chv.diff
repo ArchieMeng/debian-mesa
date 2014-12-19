@@ -1,0 +1,26 @@
+commit 70285f607ce2a0680c3e51b3717fed6a8dd19e72
+Author: Jordan Justen <jordan.l.justen@intel.com>
+Date:   Thu Apr 3 11:30:41 2014 -0700
+
+    i965: initialize more device info fields for Cherryview
+    
+    The intent in 9b6b084eb7b10d006b44e3cd22585fc3e39e0c00 was
+    for urb .size and .min_vs_entries fields to use the values
+    from the GEN8_FEATURES macro.
+    
+    Signed-off-by: Jordan Justen <jordan.l.justen@intel.com>
+    Reviewed-by: Kenneth Graunke <kenneth@whitecape.org>
+
+diff --git a/src/mesa/drivers/dri/i965/brw_device_info.c b/src/mesa/drivers/dri/i965/brw_device_info.c
+index 7625c74..bf3c62e 100644
+--- a/src/mesa/drivers/dri/i965/brw_device_info.c
++++ b/src/mesa/drivers/dri/i965/brw_device_info.c
+@@ -231,6 +231,8 @@ static const struct brw_device_info brw_device_info_chv = {
+    .max_gs_threads = 70,
+    .max_wm_threads = 102,
+    .urb = {
++      .size = 128,
++      .min_vs_entries = 64,
+       .max_vs_entries = 640,
+       .max_gs_entries = 256,
+    }
