@@ -1,0 +1,45 @@
+commit ae4536b4f71cbe76230ea7edc7eb4d6041e651b4
+Author: Michel Dänzer <michel.daenzer@amd.com>
+Date:   Tue Nov 11 16:10:20 2014 +0900
+
+    radeonsi: Disable asynchronous DMA except for PIPE_BUFFER
+    
+    Using the asynchronous DMA engine for multi-dimensional operations seems
+    to cause random GPU lockups for various people. While the root cause for
+    this might need to be fixed in the kernel, let's disable it for now.
+    
+    Before re-enabling this, please make sure you can hit all newly enabled
+    paths in your testing, preferably with both piglit and real world apps,
+    and get in touch with people on the bug reports below for stability
+    testing.
+    
+    Bugzilla: https://bugs.freedesktop.org/show_bug.cgi?id=85647
+    Bugzilla: https://bugs.freedesktop.org/show_bug.cgi?id=83500
+    Cc: "10.3 10.4" <mesa-stable@lists.freedesktop.org>
+    Reviewed-by: Marek Olšák <marek.olsak@amd.com>
+    Reviewed-by: Grigori Goronzy <greg@chown.ath.cx>
+
+--- a/src/gallium/drivers/radeonsi/si_dma.c
++++ b/src/gallium/drivers/radeonsi/si_dma.c
+@@ -270,6 +270,21 @@ void si_dma_copy(struct pipe_context *ct
+ 		return;
+ 	}
+ 
++	/* XXX: Using the asynchronous DMA engine for multi-dimensional
++	 * operations seems to cause random GPU lockups for various people.
++	 * While the root cause for this might need to be fixed in the kernel,
++	 * let's disable it for now.
++	 *
++	 * Before re-enabling this, please make sure you can hit all newly
++	 * enabled paths in your testing, preferably with both piglit and real
++	 * world apps, and get in touch with people on the bug reports below
++	 * for stability testing.
++	 *
++	 * https://bugs.freedesktop.org/show_bug.cgi?id=85647
++	 * https://bugs.freedesktop.org/show_bug.cgi?id=83500
++	 */
++	goto fallback;
++
+ 	if (src->format != dst->format || src_box->depth > 1 ||
+ 	    rdst->dirty_level_mask != 0) {
+ 		goto fallback;
