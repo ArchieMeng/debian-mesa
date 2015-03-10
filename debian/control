@@ -82,7 +82,7 @@ Package: libxatracker-dev
 Section: libdevel
 Architecture: linux-any
 Depends:
- libxatracker2 (= ${binary:Version}),
+ libxatracker2 (= ${binary:Version}) | libxatracker2-lts-utopic | libxatracker2-lts-vivid,
  ${misc:Depends},
 Description: X acceleration library -- development files
  This package contains the XA (X acceleration) library.  It is used exclusively
@@ -182,8 +182,9 @@ Package: libegl1-mesa-dev
 Section: libdevel
 Architecture: any
 Depends:
- libegl1-mesa (= ${binary:Version}),
- libegl1-mesa-drivers (= ${binary:Version}) [!hurd-any],
+ libegl1-mesa (= ${binary:Version}) | libegl1-mesa-lts-utopic | libegl1-mesa-lts-vivid,
+# Vivid and higher only have libegl1-mesa-drivers as a transitional package.
+ libegl1-mesa-drivers (= ${binary:Version}) [!hurd-any] | libegl1-mesa-drivers-lts-utopic | libwayland-egl1-mesa-lts-vivid,
  libdrm-dev (>= 2.4.52) [!hurd-any],
  x11proto-dri2-dev (>= 2.6),
  x11proto-gl-dev (>= 1.4.14),
@@ -370,7 +371,7 @@ Package: libgles1-mesa-dev
 Section: libdevel
 Architecture: any
 Depends:
- libgles1-mesa (= ${binary:Version}),
+ libgles1-mesa (= ${binary:Version}) | libgles1-mesa-lts-utopic | libgles1-mesa-lts-vivid,
  libegl1-mesa-dev,
  ${misc:Depends},
 Description: free implementation of the OpenGL|ES 1.x API -- development files
@@ -428,7 +429,7 @@ Package: libgles2-mesa-dev
 Section: libdevel
 Architecture: any
 Depends:
- libgles2-mesa (= ${binary:Version}),
+ libgles2-mesa (= ${binary:Version}) | libgles2-mesa-lts-utopic | libgles2-mesa-lts-vivid,
  libegl1-mesa-dev,
  ${misc:Depends},
 Description: free implementation of the OpenGL|ES 2.x API -- development files
@@ -606,7 +607,7 @@ Section: libdevel
 Architecture: any
 Depends:
  mesa-common-dev (= ${binary:Version}),
- libgl1-mesa-glx (= ${binary:Version}),
+ libgl1-mesa-glx (= ${binary:Version}) | libgl1-mesa-glx-lts-utopic | libgl1-mesa-glx-lts-vivid,
  libdrm-dev (>= 2.4.52) [!hurd-any],
  libx11-dev,
  libx11-xcb-dev,
