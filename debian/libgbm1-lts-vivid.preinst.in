@@ -1,0 +1,28 @@
+#!/bin/sh -e
+set -e
+
+dir=/usr/lib/${DEB_HOST_MULTIARCH}
+pkg=$(dpkg-divert --listpackage "${dir}/libgbm.so.1.0.0")
+
+if [ -n "${pkg}" -a "${pkg}" != "libgbm1-lts-vivid" ]; then
+    dpkg-divert --remove --package ${pkg} --rename \
+        --divert "${dir}/old.libgbm.so.1.0.0" "${dir}/libgbm.so.1.0.0"
+    dpkg-divert --remove --package ${pkg} --rename \
+        --divert "${dir}/old.libgbm.so.1" "${dir}/libgbm.so.1"
+    dpkg-divert --remove --package ${pkg} --rename \
+        --divert "${dir}/gbm/old.gbm_gallium_drm.so" "${dir}/gbm/gbm_gallium_drm.so"
+    pkg=""
+fi
+
+if [ -z "${pkg}" ]; then
+    dpkg-divert --add --package "libgbm1-lts-vivid" --rename \
+        --divert "${dir}/old.libgbm.so.1.0.0" "${dir}/libgbm.so.1.0.0"
+    dpkg-divert --add --package "libgbm1-lts-vivid" --rename \
+        --divert "${dir}/old.libgbm.so.1" "${dir}/libgbm.so.1"
+    dpkg-divert --add --package "libgbm1-lts-vivid" --rename \
+        --divert "${dir}/gbm/old.gbm_gallium_drm.so" "${dir}/gbm/gbm_gallium_drm.so"
+fi
+
+#DEBHELPER#
+
+exit 0

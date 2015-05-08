@@ -1,7 +1,6 @@
 07_gallium-fix-build-failure-on-powerpcspe.diff
 
 # Ubuntu patches.
-egl-platform-mir.patch
 i915-dont-default-to-2.1.patch
 skl-use-1-register-for-uniform-pull.diff
 skl-use-vec4-datatypes-for-message-header.diff

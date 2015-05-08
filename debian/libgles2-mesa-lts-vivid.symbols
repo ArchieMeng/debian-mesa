@@ -1,4 +1,4 @@
-libGLESv2.so.2 libgles2-mesa #MINVER# | libgles2
+libGLESv2.so.2 libgles2-mesa-lts-vivid #MINVER# | libgles2
  glActiveTexture@Base 7.8.1
  glAttachShader@Base 7.8.1
  glBeginQuery@Base 9.1~

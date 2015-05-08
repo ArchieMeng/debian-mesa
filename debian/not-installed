@@ -1,6 +1,6 @@
 # Keep track of files we don't install:
 
 # Common list:
-NOT_INSTALLED := \
+NOT_INSTALLED := dri/usr/include/GL/osmesa.h \
 	dri/usr/include/GL/wglext.h \
 	dri/usr/include/GL/wmesa.h

@@ -1,4 +1,4 @@
-libGLESv1_CM.so.1 libgles1-mesa #MINVER# | libgles1
+libGLESv1_CM.so.1 libgles1-mesa-lts-vivid #MINVER# | libgles1
  glActiveTexture@Base 7.8.1
  glAlphaFunc@Base 7.8.1
  glAlphaFuncx@Base 7.8.1

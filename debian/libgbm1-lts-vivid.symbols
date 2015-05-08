@@ -1,4 +1,4 @@
-libgbm.so.1 libgbm1 #MINVER#
+libgbm.so.1 libgbm1-lts-vivid #MINVER#
 | libgbm1-private
  gbm_bo_create@Base 7.11~1
  gbm_bo_destroy@Base 7.11~1

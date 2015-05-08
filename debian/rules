@@ -77,8 +77,7 @@ else
 	EGL_DISPLAYS += wayland
 
 # Mir isn't built on AArch64 and PPC
-    ifeq (,$(filter $(DEB_HOST_ARCH),arm64 powerpc ppc64 ppc64el))
-	EGL_DISPLAYS += mir
+    ifeq (,$(filter $(DEB_HOST_ARCH),arm64 armel powerpc ppc64 ppc64el))
     endif
 
     ifeq (,$(filter $(DEB_HOST_ARCH), s390 s390x))
@@ -124,7 +123,7 @@ confflags-dri = \
 	--with-dri-drivers="$(DRI_DRIVERS)" \
 	--with-dri-driverdir=/usr/lib/$(DEB_HOST_MULTIARCH)/dri \
 	--with-dri-searchpath='/usr/lib/$(DEB_HOST_MULTIARCH)/dri:\$$$${ORIGIN}/dri:/usr/lib/dri' \
-	--enable-osmesa \
+	--disable-osmesa \
 	--enable-glx-tls \
 	--enable-shared-glapi \
 	--enable-texture-float \
@@ -223,7 +222,7 @@ binary-arch: install
 	dh_testdir
 	dh_testroot
 	dh_installchangelogs -s
-	dh_installchangelogs -pmesa-common-dev
+	dh_installchangelogs -pmesa-common-dev-lts-vivid
 	dh_installdocs -s
 	dh_installexamples -s
 
@@ -236,30 +235,30 @@ binary-arch: install
 	find debian/tmp/ -name '*.la' -exec rm '{}' ';'
 
 	# Copy the hardlinked *_dri.so correctly.
-	install -m755 -d debian/libgl1-mesa-dri/usr/lib/${DEB_HOST_MULTIARCH}/dri/
+	install -m755 -d debian/libgl1-mesa-dri-lts-vivid/usr/lib/${DEB_HOST_MULTIARCH}/dri/
 	mv debian/tmp/dri/usr/lib/${DEB_HOST_MULTIARCH}/dri/*_dri.so \
-	   debian/libgl1-mesa-dri/usr/lib/${DEB_HOST_MULTIARCH}/dri/
+	   debian/libgl1-mesa-dri-lts-vivid/usr/lib/${DEB_HOST_MULTIARCH}/dri/
 
   ifneq ($(DEB_HOST_ARCH_OS), hurd)
 	# Copy the hardlinked vdpau drivers correctly.
-	install -m755 -d debian/mesa-vdpau-drivers/usr/lib/${DEB_HOST_MULTIARCH}/vdpau/
+	install -m755 -d debian/mesa-vdpau-drivers-lts-vivid/usr/lib/${DEB_HOST_MULTIARCH}/vdpau/
 	mv debian/tmp/dri/usr/lib/${DEB_HOST_MULTIARCH}/vdpau/libvdpau*.so* \
-	   debian/mesa-vdpau-drivers/usr/lib/${DEB_HOST_MULTIARCH}/vdpau/
+	   debian/mesa-vdpau-drivers-lts-vivid/usr/lib/${DEB_HOST_MULTIARCH}/vdpau/
   endif
 
 	dh_install -s --list-missing
 
 	# Create an ld.so.conf which says where to find libGL from Mesa
 	echo "/usr/lib/$(DEB_HOST_MULTIARCH)/mesa" \
-	> $(CURDIR)/debian/libgl1-mesa-glx/usr/lib/$(DEB_HOST_MULTIARCH)/mesa/ld.so.conf
+	> $(CURDIR)/debian/libgl1-mesa-glx-lts-vivid/usr/lib/$(DEB_HOST_MULTIARCH)/mesa/ld.so.conf
 
 	# Empty directory for the alternative
-	mkdir -p $(CURDIR)/debian/libgl1-mesa-glx/usr/lib/$(DEB_HOST_MULTIARCH)/xorg/x11-extra-modules
+	mkdir -p $(CURDIR)/debian/libgl1-mesa-glx-lts-vivid/usr/lib/$(DEB_HOST_MULTIARCH)/xorg/x11-extra-modules
 
 	# Create an ld.so.conf which says where to find libEGL, libGLES{1,2}
 	# from Mesa.
 	echo "/usr/lib/$(DEB_HOST_MULTIARCH)/mesa-egl" \
-	> $(CURDIR)/debian/libegl1-mesa/usr/lib/$(DEB_HOST_MULTIARCH)/mesa-egl/ld.so.conf
+	> $(CURDIR)/debian/libegl1-mesa-lts-vivid/usr/lib/$(DEB_HOST_MULTIARCH)/mesa-egl/ld.so.conf
 
 	dh_installman -s
 	dh_lintian -s
@@ -283,8 +282,8 @@ binary-arch: install
 	# proprietary alternatives can't make more difficult…
 	set -e ; for PACKAGE in \
 		libegl1-mesa libgles1-mesa libgles2-mesa; do \
-			dh_makeshlibs -p$$PACKAGE -- -c4 \
-			-edebian/$$PACKAGE/usr/lib/$(DEB_HOST_MULTIARCH)/mesa-egl/\* \
+			dh_makeshlibs -p$$PACKAGE-lts-vivid -- -c4 \
+			-edebian/$$PACKAGE-lts-vivid/usr/lib/$(DEB_HOST_MULTIARCH)/mesa-egl/\* \
 		; done
 	dh_makeshlibs -s --remaining-packages -- -c4
 

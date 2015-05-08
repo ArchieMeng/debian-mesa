@@ -1,3 +1,9 @@
+mesa-lts-vivid (10.5.2-0ubuntu1~trusty1) trusty; urgency=medium
+
+  * Backport vivid package for lts-vivid stack.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Tue, 28 Apr 2015 16:34:21 +0300
+
 mesa (10.5.2-0ubuntu1) vivid; urgency=medium
 
   * Merge from unreleased experimental git
