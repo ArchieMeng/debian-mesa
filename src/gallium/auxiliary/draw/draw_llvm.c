@@ -1966,7 +1966,7 @@ draw_llvm_set_sampler_state(struct draw_context *draw,
       for (i = 0; i < draw->num_samplers[PIPE_SHADER_VERTEX]; i++) {
          struct draw_jit_sampler *jit_sam = &draw->llvm->jit_context.samplers[i];
 
-         if (draw->samplers[i]) {
+         if (draw->samplers[PIPE_SHADER_VERTEX][i]) {
             const struct pipe_sampler_state *s
                = draw->samplers[PIPE_SHADER_VERTEX][i];
             jit_sam->min_lod = s->min_lod;
@@ -1979,7 +1979,7 @@ draw_llvm_set_sampler_state(struct draw_context *draw,
       for (i = 0; i < draw->num_samplers[PIPE_SHADER_GEOMETRY]; i++) {
          struct draw_jit_sampler *jit_sam = &draw->llvm->gs_jit_context.samplers[i];
 
-         if (draw->samplers[i]) {
+         if (draw->samplers[PIPE_SHADER_GEOMETRY][i]) {
             const struct pipe_sampler_state *s
                = draw->samplers[PIPE_SHADER_GEOMETRY][i];
             jit_sam->min_lod = s->min_lod;
@@ -2049,7 +2049,7 @@ generate_mask_value(struct draw_gs_llvm_variant *variant,
 
    num_prims = lp_build_broadcast(gallivm, lp_build_vec_type(gallivm, mask_type),
                                   variant->num_prims);
-   for (i = 0; i <= gs_type.length; i++) {
+   for (i = 0; i < gs_type.length; i++) {
       LLVMValueRef idx = lp_build_const_int32(gallivm, i);
       mask_val = LLVMBuildInsertElement(builder, mask_val, idx, idx, "");
    }

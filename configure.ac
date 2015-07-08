@@ -115,8 +115,17 @@ if test "x$INDENT" != "xcat"; then
 fi
 
 AX_CHECK_PYTHON_MAKO_MODULE($PYTHON_MAKO_REQUIRED)
-if test -n "$PYTHON2" -a "x$acv_mako_found" != "xyes"; then
-    AC_MSG_ERROR([Python mako module v$PYTHON_MAKO_REQUIRED or higher not found])
+
+if test -z "$PYTHON2"; then
+    if test ! -f "$srcdir/src/util/format_srgb.c"; then
+        AC_MSG_ERROR([Python not found - unable to generate sources])
+    fi
+else
+    if test "x$acv_mako_found" = xno; then
+        if test ! -f "$srcdir/src/mesa/main/format_unpack.c"; then
+            AC_MSG_ERROR([Python mako module v$PYTHON_MAKO_REQUIRED or higher not found])
+        fi
+    fi
 fi
 
 AC_PROG_INSTALL
@@ -600,6 +609,7 @@ if test "x$enable_asm" = xyes; then
 fi
 
 AC_CHECK_HEADER([xlocale.h], [DEFINES="$DEFINES -DHAVE_XLOCALE_H"])
+AC_CHECK_HEADER([sys/sysctl.h], [DEFINES="$DEFINES -DHAVE_SYS_SYSCTL_H"])
 AC_CHECK_FUNC([strtof], [DEFINES="$DEFINES -DHAVE_STRTOF"])
 
 dnl Check to see if dlopen is in default libraries (like Solaris, which
@@ -901,7 +911,7 @@ x*yes*yes*)
 esac
 
 # Building Xlib-GLX requires shared glapi to be disabled.
-if test "x$enable_xlib_glx" = xyes; then
+if test "x$enable_shared_glapi$enable_xlib_glx" = xyesyes; then
     AC_MSG_NOTICE([Shared GLAPI should not used with Xlib-GLX, disabling])
     enable_shared_glapi=no
 fi
@@ -1369,8 +1379,15 @@ if test "x$enable_egl" = xyes; then
 
     if test "$enable_static" != yes; then
         if test "x$enable_dri" = xyes; then
-	    HAVE_EGL_DRIVER_DRI2=1
-	fi
+            HAVE_EGL_DRIVER_DRI2=1
+            if test "x$enable_shared_glapi" = xno; then
+                AC_MSG_ERROR([egl_dri2 requires --enable-shared-glapi])
+            fi
+        else
+            # Avoid building an "empty" libEGL. Drop/update this
+            # when other backends (haiku?) come along.
+            AC_MSG_ERROR([egl requires --enable-dri])
+        fi
 
     fi
 fi

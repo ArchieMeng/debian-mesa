@@ -130,6 +130,40 @@ set_blitter_tiling(struct brw_context *brw,
       ADVANCE_BATCH();                                                  \
    } while (0)
 
+static int
+blt_pitch(struct intel_mipmap_tree *mt)
+{
+   int pitch = mt->pitch;
+   if (mt->tiling)
+      pitch /= 4;
+   return pitch;
+}
+
+bool
+intel_miptree_blit_compatible_formats(mesa_format src, mesa_format dst)
+{
+   /* The BLT doesn't handle sRGB conversion */
+   assert(src == _mesa_get_srgb_format_linear(src));
+   assert(dst == _mesa_get_srgb_format_linear(dst));
+
+   /* No swizzle or format conversions possible, except... */
+   if (src == dst)
+      return true;
+
+   /* ...we can either discard the alpha channel when going from A->X,
+    * or we can fill the alpha channel with 0xff when going from X->A
+    */
+   if (src == MESA_FORMAT_B8G8R8A8_UNORM || src == MESA_FORMAT_B8G8R8X8_UNORM)
+      return (dst == MESA_FORMAT_B8G8R8A8_UNORM ||
+              dst == MESA_FORMAT_B8G8R8X8_UNORM);
+
+   if (src == MESA_FORMAT_R8G8B8A8_UNORM || src == MESA_FORMAT_R8G8B8X8_UNORM)
+      return (dst == MESA_FORMAT_R8G8B8A8_UNORM ||
+              dst == MESA_FORMAT_R8G8B8X8_UNORM);
+
+   return false;
+}
+
 /**
  * Implements a rectangular block transfer (blit) of pixels between two
  * miptrees.
@@ -172,11 +206,7 @@ intel_miptree_blit(struct brw_context *brw,
     * the X channel don't matter), and XRGB8888 to ARGB8888 by setting the A
     * channel to 1.0 at the end.
     */
-   if (src_format != dst_format &&
-      ((src_format != MESA_FORMAT_B8G8R8A8_UNORM &&
-        src_format != MESA_FORMAT_B8G8R8X8_UNORM) ||
-       (dst_format != MESA_FORMAT_B8G8R8A8_UNORM &&
-        dst_format != MESA_FORMAT_B8G8R8X8_UNORM))) {
+   if (!intel_miptree_blit_compatible_formats(src_format, dst_format)) {
       perf_debug("%s: Can't use hardware blitter from %s to %s, "
                  "falling back.\n", __FUNCTION__,
                  _mesa_get_format_name(src_format),
@@ -197,14 +227,14 @@ intel_miptree_blit(struct brw_context *brw,
     *
     * Furthermore, intelEmitCopyBlit (which is called below) uses a signed
     * 16-bit integer to represent buffer pitch, so it can only handle buffer
-    * pitches < 32k.
+    * pitches < 32k. However, the pitch is measured in bytes for linear buffers
+    * and dwords for tiled buffers.
     *
     * As a result of these two limitations, we can only use the blitter to do
-    * this copy when the miptree's pitch is less than 32k.
+    * this copy when the miptree's pitch is less than 32k linear or 128k tiled.
     */
-   if (src_mt->pitch >= 32768 ||
-       dst_mt->pitch >= 32768) {
-      perf_debug("Falling back due to >=32k pitch\n");
+   if (blt_pitch(src_mt) >= 32768 || blt_pitch(dst_mt) >= 32768) {
+      perf_debug("Falling back due to >= 32k/128k pitch\n");
       return false;
    }
 
@@ -261,12 +291,27 @@ intel_miptree_blit(struct brw_context *brw,
       return false;
    }
 
-   if (src_mt->format == MESA_FORMAT_B8G8R8X8_UNORM &&
-       dst_mt->format == MESA_FORMAT_B8G8R8A8_UNORM) {
+   /* XXX This could be done in a single pass using XY_FULL_MONO_PATTERN_BLT */
+   if (_mesa_get_format_bits(src_format, GL_ALPHA_BITS) == 0 &&
+       _mesa_get_format_bits(dst_format, GL_ALPHA_BITS) > 0) {
       intel_miptree_set_alpha_to_one(brw, dst_mt,
                                      dst_x, dst_y,
                                      width, height);
    }
+
+   return true;
+}
+
+static bool
+alignment_valid(struct brw_context *brw, unsigned offset, uint32_t tiling)
+{
+   /* Tiled buffers must be page-aligned (4K). */
+   if (tiling != I915_TILING_NONE)
+      return (offset & 4095) == 0;
+
+   /* On Gen8+, linear buffers must be cacheline-aligned. */
+   if (brw->gen >= 8)
+      return (offset & 63) == 0;
 
    return true;
 }
@@ -296,14 +341,11 @@ intelEmitCopyBlit(struct brw_context *brw,
    bool dst_y_tiled = dst_tiling == I915_TILING_Y;
    bool src_y_tiled = src_tiling == I915_TILING_Y;
 
-   if (dst_tiling != I915_TILING_NONE) {
-      if (dst_offset & 4095)
-	 return false;
-   }
-   if (src_tiling != I915_TILING_NONE) {
-      if (src_offset & 4095)
-	 return false;
-   }
+   if (!alignment_valid(brw, dst_offset, dst_tiling))
+      return false;
+   if (!alignment_valid(brw, src_offset, src_tiling))
+      return false;
+
    if ((dst_y_tiled || src_y_tiled) && brw->gen < 6)
       return false;
 
@@ -524,6 +566,7 @@ intel_emit_linear_blit(struct brw_context *brw,
 {
    struct gl_context *ctx = &brw->ctx;
    GLuint pitch, height;
+   int16_t src_x, dst_x;
    bool ok;
 
    /* The pitch given to the GPU must be DWORD aligned, and
@@ -532,11 +575,13 @@ intel_emit_linear_blit(struct brw_context *brw,
     */
    pitch = ROUND_DOWN_TO(MIN2(size, (1 << 15) - 1), 4);
    height = (pitch == 0) ? 1 : size / pitch;
+   src_x = src_offset % 64;
+   dst_x = dst_offset % 64;
    ok = intelEmitCopyBlit(brw, 1,
-			  pitch, src_bo, src_offset, I915_TILING_NONE,
-			  pitch, dst_bo, dst_offset, I915_TILING_NONE,
-			  0, 0, /* src x/y */
-			  0, 0, /* dst x/y */
+			  pitch, src_bo, src_offset - src_x, I915_TILING_NONE,
+			  pitch, dst_bo, dst_offset - dst_x, I915_TILING_NONE,
+			  src_x, 0, /* src x/y */
+			  dst_x, 0, /* dst x/y */
 			  pitch, height, /* w, h */
 			  GL_COPY);
    if (!ok)
@@ -544,15 +589,18 @@ intel_emit_linear_blit(struct brw_context *brw,
 
    src_offset += pitch * height;
    dst_offset += pitch * height;
+   src_x = src_offset % 64;
+   dst_x = dst_offset % 64;
    size -= pitch * height;
    assert (size < (1 << 15));
    pitch = ALIGN(size, 4);
+
    if (size != 0) {
       ok = intelEmitCopyBlit(brw, 1,
-			     pitch, src_bo, src_offset, I915_TILING_NONE,
-			     pitch, dst_bo, dst_offset, I915_TILING_NONE,
-			     0, 0, /* src x/y */
-			     0, 0, /* dst x/y */
+			     pitch, src_bo, src_offset - src_x, I915_TILING_NONE,
+			     pitch, dst_bo, dst_offset - dst_x, I915_TILING_NONE,
+			     src_x, 0, /* src x/y */
+			     dst_x, 0, /* dst x/y */
 			     size, 1, /* w, h */
 			     GL_COPY);
       if (!ok)

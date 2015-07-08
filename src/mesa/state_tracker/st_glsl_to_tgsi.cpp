@@ -1832,7 +1832,7 @@ glsl_to_tgsi_visitor::visit(ir_expression *ir)
       break;
    case ir_unop_i2b:
       if (native_integers)
-         emit(ir, TGSI_OPCODE_INEG, result_dst, op[0]);
+         emit(ir, TGSI_OPCODE_USNE, result_dst, op[0], st_src_reg_for_int(0));
       else
          emit(ir, TGSI_OPCODE_SNE, result_dst, op[0], st_src_reg_for_float(0.0));
       break;
@@ -2860,7 +2860,7 @@ glsl_to_tgsi_visitor::visit(ir_texture *ir)
       break;
    case ir_query_levels:
       opcode = TGSI_OPCODE_TXQ;
-      lod_info = st_src_reg(PROGRAM_IMMEDIATE, 0, GLSL_TYPE_INT);
+      lod_info = undef_src;
       levels_src = get_temp(ir->type);
       break;
    case ir_txf:
@@ -3668,6 +3668,7 @@ glsl_to_tgsi_visitor::copy_propagate(void)
              inst->dst.index == inst->src[0].index) &&
           !inst->dst.reladdr &&
           !inst->saturate &&
+          inst->src[0].file != PROGRAM_ARRAY &&
           !inst->src[0].reladdr &&
           !inst->src[0].reladdr2 &&
           !inst->src[0].negate) {
@@ -4151,6 +4152,7 @@ struct st_translate {
 
    struct ureg_dst arrays[MAX_ARRAYS];
    struct ureg_src *constants;
+   int num_constants;
    struct ureg_src *immediates;
    struct ureg_dst outputs[PIPE_MAX_SHADER_OUTPUTS];
    struct ureg_src inputs[PIPE_MAX_SHADER_INPUTS];
@@ -4351,7 +4353,7 @@ src_register(struct st_translate *t, const struct st_src_reg *reg)
 {
    switch(reg->file) {
    case PROGRAM_UNDEFINED:
-      return ureg_src_undef();
+      return ureg_imm4f(t->ureg, 0, 0, 0, 0);
 
    case PROGRAM_TEMPORARY:
    case PROGRAM_ARRAY:
@@ -4359,15 +4361,15 @@ src_register(struct st_translate *t, const struct st_src_reg *reg)
 
    case PROGRAM_UNIFORM:
       assert(reg->index >= 0);
-      return t->constants[reg->index];
+      return reg->index < t->num_constants ?
+               t->constants[reg->index] : ureg_imm4f(t->ureg, 0, 0, 0, 0);
    case PROGRAM_STATE_VAR:
    case PROGRAM_CONSTANT:       /* ie, immediate */
       if (reg->has_index2)
          return ureg_src_register(TGSI_FILE_CONSTANT, reg->index);
-      else if (reg->index < 0)
-         return ureg_DECL_constant(t->ureg, 0);
       else
-         return t->constants[reg->index];
+         return reg->index >= 0 && reg->index < t->num_constants ?
+                  t->constants[reg->index] : ureg_imm4f(t->ureg, 0, 0, 0, 0);
 
    case PROGRAM_IMMEDIATE:
       return t->immediates[reg->index];
@@ -4549,10 +4551,8 @@ compile_tgsi_instruction(struct st_translate *t,
                              inst->saturate,
                              clamp_dst_color_output);
 
-   for (i = 0; i < num_src; i++) {
-      assert(inst->src[i].file != PROGRAM_UNDEFINED);
+   for (i = 0; i < num_src; i++)
       src[i] = translate_src(t, &inst->src[i]);
-   }
 
    switch(inst->op) {
    case TGSI_OPCODE_BGNLOOP:
@@ -5082,6 +5082,7 @@ st_translate_program(
          ret = PIPE_ERROR_OUT_OF_MEMORY;
          goto out;
       }
+      t->num_constants = proginfo->Parameters->NumParameters;
 
       for (i = 0; i < proginfo->Parameters->NumParameters; i++) {
          switch (proginfo->Parameters->Parameters[i].Type) {
@@ -5181,6 +5182,7 @@ out:
       free(t->insn);
       free(t->labels);
       free(t->constants);
+      t->num_constants = 0;
       free(t->immediates);
 
       if (t->error) {
@@ -5337,6 +5339,7 @@ get_mesa_program(struct gl_context *ctx,
     */
    _mesa_associate_uniform_storage(ctx, shader_program, prog->Parameters);
    if (!shader_program->LinkStatus) {
+      free_glsl_to_tgsi_visitor(v);
       return NULL;
    }
 

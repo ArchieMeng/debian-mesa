@@ -1036,7 +1036,7 @@ fs_visitor::implied_mrf_writes(fs_inst *inst)
    case FS_OPCODE_VARYING_PULL_CONSTANT_LOAD:
       return inst->mlen;
    case SHADER_OPCODE_GEN4_SCRATCH_WRITE:
-      return 2;
+      return inst->mlen;
    case SHADER_OPCODE_UNTYPED_ATOMIC:
    case SHADER_OPCODE_UNTYPED_SURFACE_READ:
    case SHADER_OPCODE_URB_WRITE_SIMD8:
@@ -3039,7 +3039,7 @@ fs_visitor::lower_uniform_pull_constant_loads()
          assert(const_offset_reg.file == IMM &&
                 const_offset_reg.type == BRW_REGISTER_TYPE_UD);
          const_offset_reg.fixed_hw_reg.dw1.ud /= 4;
-         fs_reg payload = vgrf(glsl_type::uint_type);
+         fs_reg payload = fs_reg(GRF, virtual_grf_alloc(1));
 
          /* We have to use a message header on Skylake to get SIMD4x2 mode.
           * Reserve space for the register.

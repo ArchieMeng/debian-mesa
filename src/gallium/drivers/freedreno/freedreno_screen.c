@@ -314,7 +314,7 @@ fd_screen_get_paramf(struct pipe_screen *pscreen, enum pipe_capf param)
 	case PIPE_CAPF_MAX_LINE_WIDTH_AA:
 	case PIPE_CAPF_MAX_POINT_WIDTH:
 	case PIPE_CAPF_MAX_POINT_WIDTH_AA:
-		return 8192.0f;
+		return 4092.0f;
 	case PIPE_CAPF_MAX_TEXTURE_ANISOTROPY:
 		return 16.0f;
 	case PIPE_CAPF_MAX_TEXTURE_LOD_BIAS:
@@ -531,6 +531,7 @@ fd_screen_create(struct fd_device *dev)
 	case 220:
 		fd2_screen_init(pscreen);
 		break;
+	case 307:
 	case 320:
 	case 330:
 		fd3_screen_init(pscreen);

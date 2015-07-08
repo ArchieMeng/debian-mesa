@@ -1,3 +1,79 @@
+mesa (10.5.9-1ubuntu1~vivid1) vivid; urgency=medium
+
+  * Backport to vivid. (LP: #1471213)
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Wed, 08 Jul 2015 11:33:07 +0300
+
+mesa (10.5.9-1ubuntu1) wily; urgency=medium
+
+  * Merge from Debian unstable.
+  * skl-use-1-register-for-uniform-pull.diff dropped, upstream.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Mon, 06 Jul 2015 10:03:58 +0300
+
+mesa (10.5.9-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Mon, 06 Jul 2015 08:56:26 +0300
+
+mesa (10.5.8-1ubuntu2) wily; urgency=medium
+
+  * i965-store-the-gpu-revision.diff,
+    i965-refactor-simd16-to-2xsimd8-checks.diff,
+    i965-define-i915-param-revision.diff,
+    skl-break-down-simd16-3-source-instructions.diff:
+    Fix noise in Unity, torcs et al. (LP: #1471213)
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Fri, 03 Jul 2015 15:08:26 +0300
+
+mesa (10.5.8-1ubuntu1) wily; urgency=medium
+
+  * Merge from Debian unstable.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Thu, 25 Jun 2015 21:34:12 +0300
+
+mesa (10.5.8-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Thu, 25 Jun 2015 18:50:11 +0300
+
+mesa (10.5.7-1ubuntu1) wily; urgency=medium
+
+  * Merge from Debian unstable, remaining changes
+    - libclc/clang is not in main, drop building mesa-opencl-icd
+    - drop building the software rasterizer
+    - llvm-3.6 is the default on Ubuntu, use it
+    - install GL/EGL libs under a separate dir to not conflict with
+      blobs, use alternatives for ldconfig
+    - patches:
+      egl-platform-mir.patch: Mir EGL platform
+      i915-dont-default-to-2.1.patch: revert of i915 forced OpenGL
+        2.1 commit
+      skl-*: backports for Skylake
+  * control: Add libmirclient-dev to build-depends.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Tue, 16 Jun 2015 14:33:48 +0300
+
+mesa (10.5.7-1) unstable; urgency=medium
+
+  * New upstream release.
+  * control: Bump policy to 3.9.6, no changes.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Tue, 16 Jun 2015 11:57:08 +0300
+
+mesa (10.5.5-1) unstable; urgency=medium
+
+  [ Maarten Lankhorst ]
+  * New upstream release.
+  * Update watch file.
+
+  [ Timo Aaltonen ]
+  * libegl1-mesa.symbols: Updated.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Tue, 12 May 2015 13:26:49 +0300
+
 mesa-lts-vivid (10.5.2-0ubuntu1~trusty1) trusty; urgency=medium
 
   * Backport vivid package for lts-vivid stack.
@@ -11,17 +87,6 @@ mesa (10.5.2-0ubuntu1) vivid; urgency=medium
   * egl-platform-mir.patch: Refreshed.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Mon, 30 Mar 2015 15:07:30 +0300
-
-mesa (10.5.2-1) UNRELEASED; urgency=medium
-
-  [ Maarten Lankhorst ]
-  * New upstream release.
-  * Update watch file.
-
-  [ Timo Aaltonen ]
-  * libegl1-mesa.symbols: Updated.
-
- -- Maarten Lankhorst <maarten.lankhorst@ubuntu.com>  Mon, 16 Feb 2015 09:35:43 +0100
 
 mesa (10.5.0-0ubuntu1) vivid; urgency=medium
 
