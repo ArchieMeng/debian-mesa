@@ -1,0 +1,43 @@
+commit 74fd226e34d0cf5e9ff43174ae69b4a66f5de1ab
+Author: Ben Widawsky <benjamin.widawsky@intel.com>
+Date:   Wed Mar 25 16:52:46 2015 -0700
+
+    i965/skl: Don't use the PMA depth stall workaround
+    
+    The PMA depth stall must be enabled (optimization turned off) under certain
+    circumstances on gen8. This was supposedly fixed for Gen9, which means we do not
+    need to check, or toggle the state. The hardware is supposed to enable the
+    hardware optimization by default, unlike BDW, so we also don't need to set it at
+    init. For whatever reason this improves stability on ETQW with the bug mentioned
+    below.
+    
+    References: https://bugs.freedesktop.org/show_bug.cgi?id=89039 (doesn't fix)
+    Signed-off-by: Ben Widawsky <ben@bwidawsk.net>
+    Tested-by: Anuj Phogat <anuj.phogat@intel.com>
+    Reviewed-by: Kenneth Graunke <kenneth@whitecape.org>
+
+diff --git a/src/mesa/drivers/dri/i965/gen8_depth_state.c b/src/mesa/drivers/dri/i965/gen8_depth_state.c
+index c6494c9..3d126cf 100644
+--- a/src/mesa/drivers/dri/i965/gen8_depth_state.c
++++ b/src/mesa/drivers/dri/i965/gen8_depth_state.c
+@@ -368,6 +368,10 @@ static void
+ gen8_emit_pma_stall_workaround(struct brw_context *brw)
+ {
+    uint32_t bits = 0;
++
++   if (brw->gen >= 9)
++      return;
++
+    if (pma_fix_enable(brw))
+       bits |= GEN8_HIZ_NP_PMA_FIX_ENABLE | GEN8_HIZ_NP_EARLY_Z_FAILS_DISABLE;
+ 
+@@ -400,7 +404,8 @@ gen8_hiz_exec(struct brw_context *brw, struct intel_mipmap_tree *mt,
+       return;
+ 
+    /* Disable the PMA stall fix since we're about to do a HiZ operation. */
+-   write_pma_stall_bits(brw, 0);
++   if (brw->gen == 8)
++      write_pma_stall_bits(brw, 0);
+ 
+    assert(mt->first_level == 0);
+    assert(mt->logical_depth0 >= 1);

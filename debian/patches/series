@@ -11,3 +11,5 @@ i965-store-the-gpu-revision.diff
 i965-refactor-simd16-to-2xsimd8-checks.diff
 i965-define-i915-param-revision.diff
 skl-break-down-simd16-3-source-instructions.diff
+
+skl-dont-use-the-pma-depth-stall-workaround.diff
