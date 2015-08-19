@@ -1,3 +1,10 @@
+mesa (10.5.9-2ubuntu1~vivid2) vivid; urgency=medium
+
+  * skl-dont-use-the-pma-depth-stall-workaround.diff: Fix GPU hangs in
+    certain cases. (LP: #1486522)
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Wed, 19 Aug 2015 21:32:42 +0300
+
 mesa-lts-vivid (10.5.9-2ubuntu1~trusty1) trusty; urgency=medium
 
   * Backport vivid package for lts-vivid stack.
@@ -92,12 +99,6 @@ mesa (10.5.5-1) unstable; urgency=medium
   * libegl1-mesa.symbols: Updated.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Tue, 12 May 2015 13:26:49 +0300
-
-mesa-lts-vivid (10.5.2-0ubuntu1~trusty1) trusty; urgency=medium
-
-  * Backport vivid package for lts-vivid stack.
-
- -- Timo Aaltonen <tjaalton@debian.org>  Tue, 28 Apr 2015 16:34:21 +0300
 
 mesa (10.5.2-0ubuntu1) vivid; urgency=medium
 
