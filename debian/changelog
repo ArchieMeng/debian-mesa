@@ -1,9 +1,9 @@
-mesa (10.5.9-2ubuntu1~vivid2) UNRELEASED; urgency=medium
+mesa (10.5.9-2ubuntu1~vivid2) vivid; urgency=medium
 
   * skl-dont-use-the-pma-depth-stall-workaround.diff: Fix GPU hangs in
     certain cases. (LP: #1486522)
 
- -- Timo Aaltonen <tjaalton@debian.org>  Tue, 18 Aug 2015 18:28:20 +0300
+ -- Timo Aaltonen <tjaalton@debian.org>  Wed, 19 Aug 2015 21:32:42 +0300
 
 mesa (10.5.9-2ubuntu1~vivid1) vivid; urgency=medium
 
