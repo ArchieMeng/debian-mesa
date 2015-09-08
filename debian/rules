@@ -123,7 +123,7 @@ confflags-dri = \
 	--with-dri-drivers="$(DRI_DRIVERS)" \
 	--with-dri-driverdir=/usr/lib/$(DEB_HOST_MULTIARCH)/dri \
 	--with-dri-searchpath='/usr/lib/$(DEB_HOST_MULTIARCH)/dri:\$$$${ORIGIN}/dri:/usr/lib/dri' \
-	--disable-osmesa \
+	--enable-osmesa \
 	--enable-glx-tls \
 	--enable-shared-glapi \
 	--enable-texture-float \
