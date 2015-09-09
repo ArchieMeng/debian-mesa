@@ -1,8 +1,8 @@
-mesa-lts-vivid (10.5.9-2ubuntu1~trusty3) UNRELEASED; urgency=medium
+mesa-lts-vivid (10.5.9-2ubuntu1~trusty3) trusty; urgency=medium
 
   * control: Add renamed libosmesa6/-dev. (LP: #1424059)
 
- -- Timo Aaltonen <tjaalton@debian.org>  Tue, 08 Sep 2015 14:33:08 +0300
+ -- Timo Aaltonen <tjaalton@debian.org>  Wed, 09 Sep 2015 06:28:54 +0300
 
 mesa-lts-vivid (10.5.9-2ubuntu1~trusty2) trusty; urgency=medium
 
