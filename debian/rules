@@ -40,7 +40,7 @@ buildflags-i686 = \
 include debian/not-installed
 
 # build the following configurations by default
-CONFIGS = dri
+CONFIGS = dri osmesa
 
 STAMP_DIR = debian/stamp
 STAMP = $(STAMP_DIR)/$(DEB_BUILD_GNU_TYPE)
@@ -118,7 +118,7 @@ confflags-dri = \
 	--with-dri-drivers="$(DRI_DRIVERS)" \
 	--with-dri-driverdir=/usr/lib/$(DEB_HOST_MULTIARCH)/dri \
 	--with-dri-searchpath='/usr/lib/$(DEB_HOST_MULTIARCH)/dri:\$$$${ORIGIN}/dri:/usr/lib/dri' \
-	--enable-osmesa \
+	--disable-osmesa \
 	--enable-glx-tls \
 	--enable-shared-glapi \
 	--enable-texture-float \
@@ -130,6 +130,14 @@ confflags-dri = \
 	$(confflags_GALLIUM) \
 	$(confflags_GLES) \
 	$(confflags_OPENVG) \
+	$(buildflags)
+
+confflags-osmesa = \
+	--disable-egl \
+	--disable-shared-glapi \
+	--enable-osmesa \
+	--with-dri-drivers= \
+	--with-gallium-drivers= \
 	$(buildflags)
 
 configure: $(QUILT_STAMPFN) configure.ac

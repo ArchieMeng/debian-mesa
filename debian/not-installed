@@ -2,5 +2,19 @@
 
 # Common list:
 NOT_INSTALLED := \
+	etc/drirc \
+	usr/lib/*/libGL.so* \
+	usr/lib/*/pkgconfig/dri.pc \
+	usr/lib/*/pkgconfig/gl.pc \
+	usr/include/GL/glext.h \
+	usr/include/GL/gl.h \
+	usr/include/GL/gl_mangle.h \
+	usr/include/GL/glxext.h \
+	usr/include/GL/glx.h \
+	usr/include/GL/glx_mangle.h \
+	usr/include/GL/wglext.h \
+	usr/include/GL/wmesa.h \
+	usr/include/GL/internal/dri_interface.h \
+	dri/usr/include/GL/osmesa.h \
 	dri/usr/include/GL/wglext.h \
 	dri/usr/include/GL/wmesa.h
