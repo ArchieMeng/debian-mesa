@@ -1,3 +1,10 @@
+mesa (10.1.3-0ubuntu0.6) UNRELEASED; urgency=medium
+
+  * control: Allow unrenamed -dev packages to work with lts-wily and lts-
+    xenial.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Tue, 12 Jan 2016 16:00:10 +0200
+
 mesa (10.1.3-0ubuntu0.5) trusty; urgency=medium
 
   * Build osmesa separately and without using shared glapi again.
