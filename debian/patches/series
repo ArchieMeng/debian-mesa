@@ -4,5 +4,5 @@
 
 
 # Ubuntu patches.
-egl-platform-mir.patch
 i915-dont-default-to-2.1.patch
+mesa-Revert-st-vdpau-add-HEVC-support-v2.patch

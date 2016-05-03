@@ -1,3 +1,9 @@
+mesa-lts-xenial (11.2.0-1ubuntu2~trusty1) trusty; urgency=medium
+
+  * Backport for lts-xenial stack.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Tue, 03 May 2016 14:02:17 +0300
+
 mesa (11.2.0-1ubuntu2) xenial; urgency=medium
 
   * control, rules: Enable mesa-opencl-icd now that the archive reorg

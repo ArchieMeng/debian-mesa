@@ -62,7 +62,6 @@ else
 # Non-Linux ports also lack *_CLOEXEC and epoll, so wayland isn't ready yet:
 	EGL_DISPLAYS += wayland
 # Likewise, Mir makes no attempt to be portable to random kernels.
-	EGL_DISPLAYS += mir
 
     ifeq (,$(filter $(DEB_HOST_ARCH), s390 s390x))
 	DRI_DRIVERS += nouveau
@@ -85,7 +84,7 @@ else
 	# so no opencl on kfreebsd.
 	# opencl needs LLVM and Clang, so only build it on the subset
 	# of arches where we have LLVM enabled.
-	confflags_GALLIUM += --enable-opencl --enable-opencl-icd
+#	confflags_GALLIUM += --enable-opencl --enable-opencl-icd
   endif
 
   # LLVM is required for r300g, radeonsi and llvmpipe:
@@ -99,7 +98,7 @@ else
   endif
 	confflags_DIRECT_RENDERING = --enable-driglx-direct
 	confflags_GALLIUM += --enable-vdpau
-	confflags_GALLIUM += --enable-va
+#	confflags_GALLIUM += --enable-va
 endif
 
 confflags_EGL = --with-egl-platforms="$(EGL_DISPLAYS)"
@@ -111,7 +110,7 @@ confflags += \
 	--with-dri-drivers="$(DRI_DRIVERS)" \
 	--with-dri-driverdir=/usr/lib/$(DEB_HOST_MULTIARCH)/dri \
 	--with-dri-searchpath='/usr/lib/$(DEB_HOST_MULTIARCH)/dri:\$$$${ORIGIN}/dri:/usr/lib/dri' \
-	--enable-osmesa \
+	--disable-osmesa \
 	--enable-glx-tls \
 	--enable-shared-glapi \
 	--enable-texture-float \
@@ -167,7 +166,7 @@ nodbgpkg = $(filter-out $(havedbgpkg),$(otherpkg))
 
 override_dh_installchangelogs:
 	dh_installchangelogs -s
-	dh_installchangelogs -pmesa-common-dev
+	dh_installchangelogs -pmesa-common-dev-lts-xenial
 
 override_dh_install:
 	# Also get rid of other files which aren't installed. Do not
@@ -179,39 +178,39 @@ override_dh_install:
 	find debian/tmp/ -name '*.la' -exec rm '{}' ';'
 
 	# Copy the hardlinked *_dri.so correctly.
-	install -m755 -d debian/libgl1-mesa-dri/usr/lib/${DEB_HOST_MULTIARCH}/dri/
+	install -m755 -d debian/libgl1-mesa-dri-lts-xenial/usr/lib/${DEB_HOST_MULTIARCH}/dri/
 	mv debian/tmp/usr/lib/${DEB_HOST_MULTIARCH}/dri/*_dri.so \
-	   debian/libgl1-mesa-dri/usr/lib/${DEB_HOST_MULTIARCH}/dri/
+	   debian/libgl1-mesa-dri-lts-xenial/usr/lib/${DEB_HOST_MULTIARCH}/dri/
 
   ifneq ($(DEB_HOST_ARCH_OS), hurd)
 	# Copy the hardlinked vdpau drivers correctly.
-	install -m755 -d debian/mesa-vdpau-drivers/usr/lib/${DEB_HOST_MULTIARCH}/vdpau/
+	install -m755 -d debian/mesa-vdpau-drivers-lts-xenial/usr/lib/${DEB_HOST_MULTIARCH}/vdpau/
 	mv debian/tmp/usr/lib/${DEB_HOST_MULTIARCH}/vdpau/libvdpau*.so* \
-	   debian/mesa-vdpau-drivers/usr/lib/${DEB_HOST_MULTIARCH}/vdpau/
+	   debian/mesa-vdpau-drivers-lts-xenial/usr/lib/${DEB_HOST_MULTIARCH}/vdpau/
 
 	# Add symlinks to va driver
-	install -m755 -d debian/mesa-va-drivers/usr/lib/${DEB_HOST_MULTIARCH}/dri/
-	mv debian/tmp/usr/lib/${DEB_HOST_MULTIARCH}/dri/gallium_drv_video.so \
-	   debian/mesa-va-drivers/usr/lib/${DEB_HOST_MULTIARCH}/dri/
-	for i in nouveau_drv_video.so r600_drv_video.so radeonsi_drv_video.so; do \
-	    ln -s gallium_drv_video.so \
-	    debian/mesa-va-drivers/usr/lib/${DEB_HOST_MULTIARCH}/dri/$${i}; \
-	done
+#	install -m755 -d debian/mesa-va-drivers-lts-xenial/usr/lib/${DEB_HOST_MULTIARCH}/dri/
+#	mv debian/tmp/usr/lib/${DEB_HOST_MULTIARCH}/dri/gallium_drv_video.so \
+#	   debian/mesa-va-drivers-lts-xenial/usr/lib/${DEB_HOST_MULTIARCH}/dri/
+#	for i in nouveau_drv_video.so r600_drv_video.so radeonsi_drv_video.so; do \
+#	    ln -s gallium_drv_video.so \
+#	    debian/mesa-va-drivers-lts-xenial/usr/lib/${DEB_HOST_MULTIARCH}/dri/$${i}; \
+#	done
   endif
 
 	dh_install -s --fail-missing
 
 	# Create an ld.so.conf which says where to find libGL from Mesa
 	echo "/usr/lib/$(DEB_HOST_MULTIARCH)/mesa" \
-	> $(CURDIR)/debian/libgl1-mesa-glx/usr/lib/$(DEB_HOST_MULTIARCH)/mesa/ld.so.conf
+	> $(CURDIR)/debian/libgl1-mesa-glx-lts-xenial/usr/lib/$(DEB_HOST_MULTIARCH)/mesa/ld.so.conf
 
 	# Empty directory for the alternative
-	mkdir -p $(CURDIR)/debian/libgl1-mesa-glx/usr/lib/$(DEB_HOST_MULTIARCH)/xorg/x11-extra-modules
+	mkdir -p $(CURDIR)/debian/libgl1-mesa-glx-lts-xenial/usr/lib/$(DEB_HOST_MULTIARCH)/xorg/x11-extra-modules
 
 	# Create an ld.so.conf which says where to find libEGL, libGLES{1,2}
 	# from Mesa.
 	echo "/usr/lib/$(DEB_HOST_MULTIARCH)/mesa-egl" \
-	> $(CURDIR)/debian/libegl1-mesa/usr/lib/$(DEB_HOST_MULTIARCH)/mesa-egl/ld.so.conf
+	> $(CURDIR)/debian/libegl1-mesa-lts-xenial/usr/lib/$(DEB_HOST_MULTIARCH)/mesa-egl/ld.so.conf
 
 	# Install bug control and script:
 	set -e; for p in $(allpkg); do \

@@ -1,5 +1,5 @@
 # Keep track of files we don't install:
 
 # Common list:
-NOT_INSTALLED := \
+NOT_INSTALLED := usr/include/GL/osmesa.h \
 	usr/include/GL/wglext.h
