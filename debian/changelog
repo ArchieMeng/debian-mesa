@@ -1,8 +1,8 @@
-mesa (11.2.0-1ubuntu2.1) UNRELEASED; urgency=medium
+mesa (11.2.0-1ubuntu2.1) xenial; urgency=medium
 
   * control, rules: Enable llvm/opencl on arm64. (LP: #1585942)
 
- -- Timo Aaltonen <tjaalton@debian.org>  Tue, 19 Jul 2016 10:51:38 +0300
+ -- Timo Aaltonen <tjaalton@debian.org>  Tue, 19 Jul 2016 10:53:33 +0300
 
 mesa (11.2.0-1ubuntu2) xenial; urgency=medium
 
