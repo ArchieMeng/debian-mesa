@@ -1,0 +1,35 @@
+commit 85ea8deb26da420987cbc1023c1f68b8c399e8d8
+Author: Rodrigo Vivi <rodrigo.vivi@intel.com>
+Date:   Thu Jun 23 14:38:18 2016 -0700
+
+    i965: Removing PCI IDs that are no longer listed as Kabylake.
+    
+    This is unusual. Usually IDs listed on early stages of platform
+    definition are kept there as reserved for later use.
+    
+    However these IDs here are not listed anymore in any of steppings
+    and devices IDs tables for Kabylake on configurations overview
+    section of BSpec.
+    
+    So it is better removing them before they become used in any
+    other future platform.
+    
+    Reviewed-by: Dhinakaran Pandiyan <dhinakaran.pandiyan@intel.com>
+    Acked-by: Kenneth Graunke <kenneth@whitecape.org>
+    Signed-off-by: Rodrigo Vivi <rodrigo.vivi@intel.com>
+
+--- a/include/pci_ids/i965_pci_ids.h
++++ b/include/pci_ids/i965_pci_ids.h
+@@ -153,12 +153,7 @@ CHIPSET(0x5921, kbl_gt2, "Intel(R) Kabyl
+ CHIPSET(0x5923, kbl_gt3, "Intel(R) Kabylake GT3")
+ CHIPSET(0x5926, kbl_gt3, "Intel(R) Kabylake GT3")
+ CHIPSET(0x5927, kbl_gt3, "Intel(R) Kabylake GT3")
+-CHIPSET(0x592A, kbl_gt3, "Intel(R) Kabylake GT3")
+-CHIPSET(0x592B, kbl_gt3, "Intel(R) Kabylake GT3")
+-CHIPSET(0x5932, kbl_gt4, "Intel(R) Kabylake GT4")
+-CHIPSET(0x593A, kbl_gt4, "Intel(R) Kabylake GT4")
+ CHIPSET(0x593B, kbl_gt4, "Intel(R) Kabylake GT4")
+-CHIPSET(0x593D, kbl_gt4, "Intel(R) Kabylake GT4")
+ CHIPSET(0x22B0, chv,     "Intel(R) HD Graphics (Cherryview)")
+ CHIPSET(0x22B1, chv,     "Intel(R) HD Graphics (Cherryview)")
+ CHIPSET(0x22B2, chv,     "Intel(R) HD Graphics (Cherryview)")

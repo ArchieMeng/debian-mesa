@@ -6,3 +6,8 @@
 # Ubuntu patches.
 egl-platform-mir.patch
 i915-dont-default-to-2.1.patch
+
+# upstream fixes
+bxt-add-2x6-variant.diff
+add-more-kbl-pciids.diff
+remove-obsolete-kbl-pciids.diff

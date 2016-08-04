@@ -1,0 +1,34 @@
+commit bdff2e554735ed99173ad6ee1e9934ca37e409b1
+Author: Rodrigo Vivi <rodrigo.vivi@intel.com>
+Date:   Thu Jun 23 14:35:09 2016 -0700
+
+    i956: Add more Kabylake PCI IDs.
+    
+    The spec has been updated adding new PCI IDs.
+    
+    Reviewed-by: Dhinakaran Pandiyan <dhinakaran.pandiyan@intel.com>
+    Acked-by: Kenneth Graunke <kenneth@whitecape.org>
+    Signed-off-by: Rodrigo Vivi <rodrigo.vivi@intel.com>
+
+diff --git a/include/pci_ids/i965_pci_ids.h b/include/pci_ids/i965_pci_ids.h
+index fce00da..7a7897f 100644
+--- a/include/pci_ids/i965_pci_ids.h
++++ b/include/pci_ids/i965_pci_ids.h
+@@ -137,6 +137,7 @@ CHIPSET(0x193D, skl_gt4, "Intel(R) Iris Pro Graphics P580 (Skylake GT4e)")
+ CHIPSET(0x5902, kbl_gt1, "Intel(R) Kabylake GT1")
+ CHIPSET(0x5906, kbl_gt1, "Intel(R) Kabylake GT1")
+ CHIPSET(0x590A, kbl_gt1, "Intel(R) Kabylake GT1")
++CHIPSET(0x5908, kbl_gt1, "Intel(R) Kabylake GT1")
+ CHIPSET(0x590B, kbl_gt1, "Intel(R) Kabylake GT1")
+ CHIPSET(0x590E, kbl_gt1, "Intel(R) Kabylake GT1")
+ CHIPSET(0x5913, kbl_gt1_5, "Intel(R) Kabylake GT1.5")
+@@ -149,7 +150,9 @@ CHIPSET(0x591B, kbl_gt2, "Intel(R) Kabylake GT2")
+ CHIPSET(0x591D, kbl_gt2, "Intel(R) Kabylake GT2")
+ CHIPSET(0x591E, kbl_gt2, "Intel(R) Kabylake GT2")
+ CHIPSET(0x5921, kbl_gt2, "Intel(R) Kabylake GT2F")
++CHIPSET(0x5923, kbl_gt3, "Intel(R) Kabylake GT3")
+ CHIPSET(0x5926, kbl_gt3, "Intel(R) Kabylake GT3")
++CHIPSET(0x5927, kbl_gt3, "Intel(R) Kabylake GT3")
+ CHIPSET(0x592A, kbl_gt3, "Intel(R) Kabylake GT3")
+ CHIPSET(0x592B, kbl_gt3, "Intel(R) Kabylake GT3")
+ CHIPSET(0x5932, kbl_gt4, "Intel(R) Kabylake GT4")

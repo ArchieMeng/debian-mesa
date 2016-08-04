@@ -1,3 +1,13 @@
+mesa (11.2.0-1ubuntu2.2) xenial; urgency=medium
+
+  * bxt-add-2x6-variant.diff:
+    Update BXT pciids. (LP: #1577735)
+  * add-more-kbl-pciids.diff,
+    remove-obsolete-kbl-pciids.diff:
+    Update i965 pciids. (LP: #1600124)
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Wed, 03 Aug 2016 11:45:31 +0300
+
 mesa (11.2.0-1ubuntu2.1) xenial; urgency=medium
 
   * control, rules: Enable llvm/opencl on arm64. (LP: #1585942)

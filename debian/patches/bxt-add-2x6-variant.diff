@@ -1,0 +1,54 @@
+commit f1fa8b4a1ca73fac4400e13b9aaca8c6b2955d2c
+Author: Ben Widawsky <ben@bwidawsk.net>
+Date:   Thu May 26 08:08:29 2016 -0700
+
+    i965/bxt: Add 2x6 variant
+    
+    Cc: mesa-stable@lists.freedesktop.org
+    Signed-off-by: Ben Widawsky <ben@bwidawsk.net>
+    Reviewed-by: Kristian Høgsberg <krh@bitplanet.net>
+
+diff --git a/include/pci_ids/i965_pci_ids.h b/include/pci_ids/i965_pci_ids.h
+index bd645fa..fce00da 100644
+--- a/include/pci_ids/i965_pci_ids.h
++++ b/include/pci_ids/i965_pci_ids.h
+@@ -162,4 +162,6 @@ CHIPSET(0x22B2, chv,     "Intel(R) HD Graphics (Cherryview)")
+ CHIPSET(0x22B3, chv,     "Intel(R) HD Graphics (Cherryview)")
+ CHIPSET(0x0A84, bxt,     "Intel(R) HD Graphics (Broxton)")
+ CHIPSET(0x1A84, bxt,     "Intel(R) HD Graphics (Broxton)")
++CHIPSET(0x1A85, bxt_2x6, "Intel(R) HD Graphics (Broxton 2x6)")
+ CHIPSET(0x5A84, bxt,     "Intel(R) HD Graphics (Broxton)")
++CHIPSET(0x5A85, bxt_2x6, "Intel(R) HD Graphics (Broxton 2x6)")
+diff --git a/src/mesa/drivers/dri/i965/brw_device_info.c b/src/mesa/drivers/dri/i965/brw_device_info.c
+index 3666190..77bbe78 100644
+--- a/src/mesa/drivers/dri/i965/brw_device_info.c
++++ b/src/mesa/drivers/dri/i965/brw_device_info.c
+@@ -401,6 +401,28 @@ static const struct brw_device_info brw_device_info_bxt = {
+    }
+ };
+ 
++static const struct brw_device_info brw_device_info_bxt_2x6 = {
++   GEN9_FEATURES,
++   .is_broxton = 1,
++   .gt = 1,
++   .has_llc = false,
++
++   .num_slices = 1,
++   .max_vs_threads = 56, /* XXX: guess */
++   .max_hs_threads = 56, /* XXX: guess */
++   .max_ds_threads = 56,
++   .max_gs_threads = 56,
++   .max_wm_threads = 64 * 2,
++   .max_cs_threads = 6 * 6,
++   .urb = {
++      .size = 128,
++      .min_vs_entries = 34,
++      .max_vs_entries = 352,
++      .max_hs_entries = 128,
++      .max_ds_entries = 208,
++      .max_gs_entries = 128,
++   }
++};
+ /*
+  * Note: for all KBL SKUs, the PRM says SKL for GS entries, not SKL+.
+  * There's no KBL entry. Using the default SKL (GEN9) GS entries value.
