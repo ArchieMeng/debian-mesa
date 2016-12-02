@@ -1,3 +1,9 @@
+mesa (12.0.4-2ubuntu1~16.10.1) yakkety; urgency=medium
+
+  * Bugfix backport to yakkety.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Fri, 02 Dec 2016 14:24:47 +0200
+
 mesa (12.0.4-2ubuntu1) zesty; urgency=medium
 
   * Merge from Debian
