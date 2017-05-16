@@ -1,3 +1,9 @@
+mesa (17.0.6-0ubuntu0.17.04.1) zesty; urgency=medium
+
+  * New upstream bugfix release.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Tue, 16 May 2017 12:07:35 +0300
+
 mesa (17.0.5-0ubuntu1~16.04.1) xenial; urgency=medium
 
   * Backport to xenial. (LP: #1687981)
@@ -6,12 +12,6 @@ mesa (17.0.5-0ubuntu1~16.04.1) xenial; urgency=medium
       Disabled, they need a newer Mir
 
  -- Timo Aaltonen <tjaalton@debian.org>  Thu, 04 May 2017 20:34:35 +0300
-
-mesa (17.0.5-0ubuntu1~17.04.1) zesty; urgency=medium
-
-  * Backport to zesty.
-
- -- Timo Aaltonen <tjaalton@debian.org>  Thu, 04 May 2017 20:21:33 +0300
 
 mesa (17.0.5-0ubuntu1) artful; urgency=medium
 
