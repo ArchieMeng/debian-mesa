@@ -1,17 +1,18 @@
-mesa (17.0.6-0ubuntu0.17.04.1) zesty; urgency=medium
-
-  * New upstream bugfix release.
-
- -- Timo Aaltonen <tjaalton@debian.org>  Tue, 16 May 2017 12:07:35 +0300
-
-mesa (17.0.5-0ubuntu1~16.04.1) xenial; urgency=medium
+mesa (17.0.6-0ubuntu0.16.04.1) xenial; urgency=medium
 
   * Backport to xenial. (LP: #1687981)
     - egl-platform-mir.patch: Revert renaming MirSurfaceParameters
     - egl-platform-rs.patch, vulkan-mir.patch, khr_platform_mir.patch:
       Disabled, they need a newer Mir
+    - rules: Force -O2 to fix ppc64el FTBFS
 
- -- Timo Aaltonen <tjaalton@debian.org>  Thu, 04 May 2017 20:34:35 +0300
+ -- Timo Aaltonen <tjaalton@debian.org>  Tue, 16 May 2017 12:49:24 +0300
+
+mesa (17.0.6-0ubuntu0.17.04.1) zesty; urgency=medium
+
+  * New upstream bugfix release.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Tue, 16 May 2017 12:07:35 +0300
 
 mesa (17.0.5-0ubuntu1) artful; urgency=medium
 
