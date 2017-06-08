@@ -10,7 +10,7 @@
  AM_CONDITIONAL(HAVE_EGL_PLATFORM_ANDROID, echo "$egl_platforms" | grep -q 'android')
 --- a/src/intel/vulkan/Makefile.am
 +++ b/src/intel/vulkan/Makefile.am
-@@ -120,6 +120,17 @@ VULKAN_LIB_DEPS += \
+@@ -133,6 +133,17 @@ VULKAN_LIB_DEPS += \
  	$(WAYLAND_LIBS)
  endif
  
@@ -1009,7 +1009,7 @@
 +#endif
 --- a/src/vulkan/wsi/wsi_common_wayland.c
 +++ b/src/vulkan/wsi/wsi_common_wayland.c
-@@ -637,6 +637,7 @@ wsi_wl_image_init(struct wsi_wl_swapchai
+@@ -660,6 +660,7 @@ wsi_wl_image_init(struct wsi_wl_swapchai
     result = chain->base.image_fns->create_wsi_image(vk_device,
                                                      pCreateInfo,
                                                      pAllocator,
@@ -1017,7 +1017,7 @@
                                                      &image->image,
                                                      &image->memory,
                                                      &size,
-@@ -666,7 +667,7 @@ wsi_wl_image_init(struct wsi_wl_swapchai
+@@ -687,7 +688,7 @@ wsi_wl_image_init(struct wsi_wl_swapchai
     return VK_SUCCESS;
  
  fail_image:
@@ -1026,15 +1026,15 @@
                                           image->image, image->memory);
  
     return result;
-@@ -680,7 +681,7 @@ wsi_wl_swapchain_destroy(struct wsi_swap
- 
+@@ -702,7 +703,7 @@ wsi_wl_swapchain_destroy(struct wsi_swap
     for (uint32_t i = 0; i < chain->image_count; i++) {
-       if (chain->images[i].buffer)
+       if (chain->images[i].buffer) {
+          wl_buffer_destroy(chain->images[i].buffer);
 -         chain->base.image_fns->free_wsi_image(chain->base.device, pAllocator,
 +         chain->base.image_fns->free_wsi_image(chain->base.device, pAllocator, false,
                                                 chain->images[i].image,
                                                 chain->images[i].memory);
-    }
+       }
 --- a/src/vulkan/wsi/wsi_common_x11.c
 +++ b/src/vulkan/wsi/wsi_common_x11.c
 @@ -853,6 +853,7 @@ x11_image_init(VkDevice device_h, struct
