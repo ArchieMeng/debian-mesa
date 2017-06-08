@@ -1,6 +1,7 @@
 mesa (17.0.7-0ubuntu0.17.04.1) zesty; urgency=medium
 
   * New upstream bugfix release.
+  * d/p/vulkan-mir.patch: Refreshed.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Thu, 08 Jun 2017 10:54:05 +0300
 
