@@ -1,12 +1,9 @@
 mesa (17.0.7-0ubuntu0.16.04.1) xenial; urgency=medium
 
   * Backport to xenial. (LP: #1687981)
-    - egl-platform-mir.patch: Revert renaming MirSurfaceParameters
-    - egl-platform-rs.patch, vulkan-mir.patch, khr_platform_mir.patch:
-      Disabled, they need a newer Mir
     - rules: Force -O2 to fix ppc64el FTBFS
 
- -- Timo Aaltonen <tjaalton@debian.org>  Tue, 16 May 2017 12:49:24 +0300
+ -- Timo Aaltonen <tjaalton@debian.org>  Mon, 26 Jun 2017 15:29:20 +0300
 
 mesa (17.0.7-0ubuntu0.17.04.1) zesty; urgency=medium
 
