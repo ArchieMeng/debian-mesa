@@ -1,3 +1,11 @@
+mesa (17.2.1-0ubuntu1~16.04.1) UNRELEASED; urgency=medium
+
+  * Backport to xenial. (LP: #1716203)
+    - rules: Force -O2 to fix ppc64el FTBFS
+    - control: Add a transitional package for libgles1-mesa (LP: 1709823)
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Tue, 19 Sep 2017 12:20:57 +0300
+
 mesa (17.2.1-0ubuntu1) artful; urgency=medium
 
   * New upstream bugfix release. (LP: #1716250)
