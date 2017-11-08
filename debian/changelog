@@ -1,3 +1,19 @@
+mesa (17.2.4-0ubuntu1~17.10.1) artful; urgency=medium
+
+  * Backport to artful.
+  * vulkan-mir.patch: Dropped, breaks radeon vulkan driver. (LP:
+    #1720890)
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Wed, 08 Nov 2017 17:09:29 +0200
+
+mesa (17.2.4-0ubuntu1) bionic; urgency=medium
+
+  * New upstream bugfix release. (LP: #1727390)
+  * i965-disable-l3-cache-alloc-for-ext-buffers.diff: Fix corruption
+    running windowed 3D apps on dGPU. (LP: #1727401)
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Tue, 07 Nov 2017 15:36:09 +0200
+
 mesa (17.2.3-0ubuntu0~16.04.1) UNRELEASED; urgency=medium
 
   * Backport to xenial. (LP: #1716203)
@@ -5,14 +21,6 @@ mesa (17.2.3-0ubuntu0~16.04.1) UNRELEASED; urgency=medium
     - control: Add a transitional package for libgles1-mesa (LP: 1709823)
 
  -- Timo Aaltonen <tjaalton@debian.org>  Tue, 19 Sep 2017 12:20:57 +0300
-
-mesa (17.2.3-0ubuntu1) UNRELEASED; urgency=medium
-
-  * New upstream bugfix release. (LP: #1727390)
-  * i965-disable-l3-cache-alloc-for-ext-buffers.diff: Fix corruption
-    running windowed 3D apps on dGPU. (LP: #1727401)
-
- -- Timo Aaltonen <tjaalton@debian.org>  Wed, 25 Oct 2017 18:49:00 +0300
 
 mesa (17.2.2-0ubuntu1) artful; urgency=medium
 
