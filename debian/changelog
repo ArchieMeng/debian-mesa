@@ -1,3 +1,11 @@
+mesa (17.2.4-0ubuntu1~16.04.1) UNRELEASED; urgency=medium
+
+  * Backport to xenial. (LP: #1716203)
+    - rules: Force -O2 to fix ppc64el FTBFS
+    - control: Add a transitional package for libgles1-mesa (LP: 1709823)
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Wed, 08 Nov 2017 17:17:41 +0200
+
 mesa (17.2.4-0ubuntu1~17.10.1) artful; urgency=medium
 
   * Backport to artful.
@@ -13,14 +21,6 @@ mesa (17.2.4-0ubuntu1) bionic; urgency=medium
     running windowed 3D apps on dGPU. (LP: #1727401)
 
  -- Timo Aaltonen <tjaalton@debian.org>  Tue, 07 Nov 2017 15:36:09 +0200
-
-mesa (17.2.3-0ubuntu0~16.04.1) UNRELEASED; urgency=medium
-
-  * Backport to xenial. (LP: #1716203)
-    - rules: Force -O2 to fix ppc64el FTBFS
-    - control: Add a transitional package for libgles1-mesa (LP: 1709823)
-
- -- Timo Aaltonen <tjaalton@debian.org>  Tue, 19 Sep 2017 12:20:57 +0300
 
 mesa (17.2.2-0ubuntu1) artful; urgency=medium
 
