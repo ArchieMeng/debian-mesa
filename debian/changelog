@@ -1,3 +1,9 @@
+mesa (17.2.4-0ubuntu1~17.10.1) UNRELEASED; urgency=medium
+
+  * Backport to artful.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Wed, 08 Nov 2017 16:55:03 +0200
+
 mesa (17.2.4-0ubuntu1) bionic; urgency=medium
 
   * New upstream bugfix release. (LP: #1727390)
