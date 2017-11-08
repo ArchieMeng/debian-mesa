@@ -1,6 +1,8 @@
 mesa (17.2.4-0ubuntu1~17.10.1) UNRELEASED; urgency=medium
 
   * Backport to artful.
+  * vulkan-mir.patch: Dropped, breaks radeon vulkan driver. (LP:
+    #1720890)
 
  -- Timo Aaltonen <tjaalton@debian.org>  Wed, 08 Nov 2017 16:55:03 +0200
 
