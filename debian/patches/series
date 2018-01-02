@@ -5,8 +5,3 @@
 egl-platform-mir.patch
 egl-platform-rs.patch
 khr_platform_mir.patch
-0001-blorp-Turn-anv_CmdCopyBuffer-into-a-blorp_buffer_cop.patch
-0001-intel-blorp-Use-mocs.tex-for-depth-stencil.patch
-0001-anv-blorp-Add-a-device-parameter-to-blorp_surf_for_a.patch
-0001-intel-blorp-Make-the-MOCS-setting-part-of-blorp_addr.patch
-0001-i965-Use-PTE-MOCS-for-all-external-buffers.patch
