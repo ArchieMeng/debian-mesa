@@ -1,0 +1,32 @@
+From 4639cc716e89c69da41c7b54fa938457000fbd4c Mon Sep 17 00:00:00 2001
+From: Jason Ekstrand <jason.ekstrand@intel.com>
+Date: Fri, 3 Nov 2017 14:31:51 -0700
+Subject: [PATCH] intel/blorp: Use mocs.tex for depth stencil
+
+Cc: "17.3" <mesa-stable@lists.freedesktop.org>
+Tested-by: Lyude Paul <lyude@redhat.com>
+Reviewed-by: Kenneth Graunke <kenneth@whitecape.org>
+---
+ src/intel/blorp/blorp_genX_exec.h | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/src/intel/blorp/blorp_genX_exec.h b/src/intel/blorp/blorp_genX_exec.h
+index 5389262..ccbfe51 100644
+--- a/src/intel/blorp/blorp_genX_exec.h
++++ b/src/intel/blorp/blorp_genX_exec.h
+@@ -1364,11 +1364,7 @@ blorp_emit_depth_stencil_config(struct blorp_batch *batch,
+       return;
+ 
+    struct isl_depth_stencil_hiz_emit_info info = {
+-#if GEN_GEN >= 7
+-      .mocs = 1, /* GEN7_MOCS_L3 */
+-#else
+-      .mocs = 0,
+-#endif
++      .mocs = batch->blorp->mocs.tex,
+    };
+ 
+    if (params->depth.enabled) {
+-- 
+2.7.4
+

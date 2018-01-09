@@ -1,3 +1,11 @@
+mesa (17.2.4-0ubuntu3) UNRELEASED; urgency=medium
+
+  * i965-disable-l3-cache-alloc-for-ext-buffers.diff:
+    - Replaced with five backported commits from upstream
+      (LP: #1727401, #1735594)
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Tue, 09 Jan 2018 15:28:48 +0200
+
 mesa (17.2.4-0ubuntu1~17.10.1) artful; urgency=medium
 
   * Backport to artful.
