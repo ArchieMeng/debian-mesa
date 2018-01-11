@@ -1,11 +1,11 @@
-mesa (17.2.8-0ubuntu1) UNRELEASED; urgency=medium
+mesa (17.2.8-0ubuntu1) bionic; urgency=medium
 
   * New upstream bugfix release. (LP: #1741189)
   * i965-disable-l3-cache-alloc-for-ext-buffers.diff:
     - Replaced with five backported commits from upstream
       (LP: #1727401, #1735594)
 
- -- Timo Aaltonen <tjaalton@debian.org>  Tue, 09 Jan 2018 15:28:48 +0200
+ -- Timo Aaltonen <tjaalton@debian.org>  Thu, 11 Jan 2018 16:50:20 +0200
 
 mesa (17.2.4-0ubuntu2) bionic; urgency=medium
 
