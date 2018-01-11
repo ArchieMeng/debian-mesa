@@ -1,4 +1,4 @@
-mesa (17.2.4-0ubuntu1~17.10.2) artful; urgency=medium
+mesa (17.2.4-0ubuntu1~16.04.3) xenial; urgency=medium
 
   * i965-disable-l3-cache-alloc-for-ext-buffers.diff:
     - Replaced with five backported commits from upstream
