@@ -2870,6 +2870,13 @@ static int r600_emit_tess_factor(struct r600_shader_ctx *ctx)
 		int out_idx = i >= outer_comps ? tessinner_idx : tessouter_idx;
 		int out_comp = i >= outer_comps ? i - outer_comps : i;
 
+		if (ctx->shader->tcs_prim_mode == PIPE_PRIM_LINES) {
+			if (out_comp == 1)
+				out_comp = 0;
+			else if (out_comp == 0)
+				out_comp = 1;
+		}
+
 		r = single_alu_op2(ctx, ALU_OP2_ADD_INT,
 				   treg[i / 2], (2 * (i % 2)),
 				   temp_reg, 0,
@@ -3651,7 +3658,7 @@ static int r600_shader_from_tgsi(struct r600_context *rctx,
 			last = r600_isa_cf(ctx.bc->cf_last->op);
 
 		/* alu clause instructions don't have EOP bit, so add NOP */
-		if (!last || last->flags & CF_ALU || ctx.bc->cf_last->op == CF_OP_LOOP_END || ctx.bc->cf_last->op == CF_OP_CALL_FS || ctx.bc->cf_last->op == CF_OP_POP || ctx.bc->cf_last->op == CF_OP_GDS)
+		if (!last || last->flags & CF_ALU)
 			r600_bytecode_add_cfinst(ctx.bc, CF_OP_NOP);
 
 		ctx.bc->cf_last->end_of_program = 1;
@@ -9084,8 +9091,9 @@ static const struct r600_shader_tgsi_instruction r600_shader_tgsi_instruction[] 
 	[TGSI_OPCODE_DP3]	= { ALU_OP2_DOT4_IEEE, tgsi_dp},
 	[TGSI_OPCODE_DP4]	= { ALU_OP2_DOT4_IEEE, tgsi_dp},
 	[TGSI_OPCODE_DST]	= { ALU_OP0_NOP, tgsi_opdst},
-	[TGSI_OPCODE_MIN]	= { ALU_OP2_MIN, tgsi_op2},
-	[TGSI_OPCODE_MAX]	= { ALU_OP2_MAX, tgsi_op2},
+	/* MIN_DX10 returns non-nan result if one src is NaN, MIN returns NaN */
+	[TGSI_OPCODE_MIN]	= { ALU_OP2_MIN_DX10, tgsi_op2},
+	[TGSI_OPCODE_MAX]	= { ALU_OP2_MAX_DX10, tgsi_op2},
 	[TGSI_OPCODE_SLT]	= { ALU_OP2_SETGT, tgsi_op2_swap},
 	[TGSI_OPCODE_SGE]	= { ALU_OP2_SETGE, tgsi_op2},
 	[TGSI_OPCODE_MAD]	= { ALU_OP3_MULADD_IEEE, tgsi_op3},
@@ -9282,8 +9290,8 @@ static const struct r600_shader_tgsi_instruction eg_shader_tgsi_instruction[] = 
 	[TGSI_OPCODE_DP3]	= { ALU_OP2_DOT4_IEEE, tgsi_dp},
 	[TGSI_OPCODE_DP4]	= { ALU_OP2_DOT4_IEEE, tgsi_dp},
 	[TGSI_OPCODE_DST]	= { ALU_OP0_NOP, tgsi_opdst},
-	[TGSI_OPCODE_MIN]	= { ALU_OP2_MIN, tgsi_op2},
-	[TGSI_OPCODE_MAX]	= { ALU_OP2_MAX, tgsi_op2},
+	[TGSI_OPCODE_MIN]	= { ALU_OP2_MIN_DX10, tgsi_op2},
+	[TGSI_OPCODE_MAX]	= { ALU_OP2_MAX_DX10, tgsi_op2},
 	[TGSI_OPCODE_SLT]	= { ALU_OP2_SETGT, tgsi_op2_swap},
 	[TGSI_OPCODE_SGE]	= { ALU_OP2_SETGE, tgsi_op2},
 	[TGSI_OPCODE_MAD]	= { ALU_OP3_MULADD_IEEE, tgsi_op3},
@@ -9505,8 +9513,8 @@ static const struct r600_shader_tgsi_instruction cm_shader_tgsi_instruction[] = 
 	[TGSI_OPCODE_DP3]	= { ALU_OP2_DOT4_IEEE, tgsi_dp},
 	[TGSI_OPCODE_DP4]	= { ALU_OP2_DOT4_IEEE, tgsi_dp},
 	[TGSI_OPCODE_DST]	= { ALU_OP0_NOP, tgsi_opdst},
-	[TGSI_OPCODE_MIN]	= { ALU_OP2_MIN, tgsi_op2},
-	[TGSI_OPCODE_MAX]	= { ALU_OP2_MAX, tgsi_op2},
+	[TGSI_OPCODE_MIN]	= { ALU_OP2_MIN_DX10, tgsi_op2},
+	[TGSI_OPCODE_MAX]	= { ALU_OP2_MAX_DX10, tgsi_op2},
 	[TGSI_OPCODE_SLT]	= { ALU_OP2_SETGT, tgsi_op2_swap},
 	[TGSI_OPCODE_SGE]	= { ALU_OP2_SETGE, tgsi_op2},
 	[TGSI_OPCODE_MAD]	= { ALU_OP3_MULADD_IEEE, tgsi_op3},

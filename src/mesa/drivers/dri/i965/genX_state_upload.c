@@ -4304,7 +4304,7 @@ genX(upload_raster)(struct brw_context *brw)
          raster.CullMode = CULLMODE_NONE;
       }
 
-      point->SmoothFlag = raster.SmoothPointEnable;
+      raster.SmoothPointEnable = point->SmoothFlag;
 
       raster.DXMultisampleRasterizationEnable =
          _mesa_is_multisample_enabled(ctx);
@@ -5341,8 +5341,6 @@ genX(init_atoms)(struct brw_context *brw)
 
       /* Command packets:
        */
-      &brw_invariant_state,
-
       &brw_binding_table_pointers,
       &genX(blend_constant_color),
 

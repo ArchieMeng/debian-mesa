@@ -1957,7 +1957,7 @@ fs_visitor::assign_constant_locations()
 
    /* For each uniform slot, a value of true indicates that the given slot and
     * the next slot must remain contiguous.  This is used to keep us from
-    * splitting arrays apart.
+    * splitting arrays and 64-bit values apart.
     */
    bool contiguous[uniforms];
    memset(contiguous, 0, sizeof(contiguous));
@@ -1998,6 +1998,9 @@ fs_visitor::assign_constant_locations()
             if (constant_nr >= 0 && constant_nr < (int) uniforms) {
                int regs_read = inst->components_read(i) *
                   type_sz(inst->src[i].type) / 4;
+               assert(regs_read <= 2);
+               if (regs_read == 2)
+                  contiguous[constant_nr] = true;
                for (int j = 0; j < regs_read; j++) {
                   is_live[constant_nr + j] = true;
                   bitsize_access[constant_nr + j] =
@@ -3480,8 +3483,14 @@ fs_visitor::lower_integer_multiplication()
              * schedule multi-component multiplications much better.
              */
 
+            bool needs_mov = false;
             fs_reg orig_dst = inst->dst;
-            if (orig_dst.is_null() || orig_dst.file == MRF) {
+            if (orig_dst.is_null() || orig_dst.file == MRF ||
+                regions_overlap(inst->dst, inst->size_written,
+                                inst->src[0], inst->size_read(0)) ||
+                regions_overlap(inst->dst, inst->size_written,
+                                inst->src[1], inst->size_read(1))) {
+               needs_mov = true;
                inst->dst = fs_reg(VGRF, alloc.allocate(dispatch_width / 8),
                                   inst->dst.type);
             }
@@ -3512,7 +3521,7 @@ fs_visitor::lower_integer_multiplication()
                      subscript(low, BRW_REGISTER_TYPE_UW, 1),
                      subscript(high, BRW_REGISTER_TYPE_UW, 0));
 
-            if (inst->conditional_mod || orig_dst.file == MRF) {
+            if (needs_mov || inst->conditional_mod) {
                set_condmod(inst->conditional_mod,
                            ibld.MOV(orig_dst, inst->dst));
             }
@@ -6160,6 +6169,31 @@ fs_visitor::run_gs()
    return !failed;
 }
 
+/* From the SKL PRM, Volume 16, Workarounds:
+ *
+ *   0877  3D   Pixel Shader Hang possible when pixel shader dispatched with
+ *              only header phases (R0-R2)
+ *
+ *   WA: Enable a non-header phase (e.g. push constant) when dispatch would
+ *       have been header only.
+ *
+ * Instead of enabling push constants one can alternatively enable one of the
+ * inputs. Here one simply chooses "layer" which shouldn't impose much
+ * overhead.
+ */
+static void
+gen9_ps_header_only_workaround(struct brw_wm_prog_data *wm_prog_data)
+{
+   if (wm_prog_data->num_varying_inputs)
+      return;
+
+   if (wm_prog_data->base.curb_read_length)
+      return;
+
+   wm_prog_data->urb_setup[VARYING_SLOT_LAYER] = 0;
+   wm_prog_data->num_varying_inputs = 1;
+}
+
 bool
 fs_visitor::run_fs(bool allow_spilling, bool do_rep_send)
 {
@@ -6223,6 +6257,10 @@ fs_visitor::run_fs(bool allow_spilling, bool do_rep_send)
       optimize();
 
       assign_curb_setup();
+
+      if (devinfo->gen >= 9)
+         gen9_ps_header_only_workaround(wm_prog_data);
+
       assign_urb_setup();
 
       fixup_3src_null_dest();

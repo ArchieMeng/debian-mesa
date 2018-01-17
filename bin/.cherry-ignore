@@ -56,15 +56,106 @@ fee9d05e2136b2b7c5a1ad2be7180b99f733f539 radv: Update code pointer correctly if 
 # stable: 17.3 nomination only.
 d8cefaa197f02944812ef535b1b303dd5bf26848 radv: use device name in cache creation like radeonsi.
 
-# fixes:  Commit is not applicable when 087e010b2b3 is missing.
-6ce550453f1df64caeb956f215d32da96b89f2b1 radv: Don't use vgpr indexing for outputs on GFX9.
-
-# fixes:  Commit is not applicable when 6ce550453f1 is missing.
-c07d719e8b683e1bf78f187dd17fe4716f4e5e9c radv: Disallow indirect outputs for GS on GFX9 as well.
-
 # fixes:  This commit addressed earlier commit 35ac13ed3 which did not
 #         land in branch.
 11d688d9f0d2ee4d0178d1807c0075e5e8364b1d mesa/bufferobj: don't double negate the range
 
 # extra:  Commit is not applicable when ade416d0236 is missing.
 07bfdb478bf844a0ac9cf3679f51f83c4abea5a1 broadcom/vc5: Propagate vc4 aliasing fix to vc5.
+
+# stable: This commit addressed earlier commit 8d90e28839 which did
+#         not land in branch.
+446c5726ecb968d06a6607e0df42be1cb74948c4 i965: fix blorp stage_prog_data->param leak
+
+# stable: This commit addressed earlier commit 78ade659569 which did
+#         not land in branch.
+8fbd82f464f26a56167f7962174b2b69756a105a etnaviv: don't do resolve-in-place without valid TS
+
+# stable: This commit addressed earlier commit 8d90e28839 which did
+#         not land in branch.
+7b4387519c382cffef9c62bbbbefcfe71cfde905 intel/fs: Alloc pull constants off mem_ctx
+
+# stable: 17.3 nomination only.
+3f8e3c2bd8f54ae6817f7496be47f4e1a8860d9c radeonsi: add a workaround for weird s_buffer_load_dword behavior on SI
+7dae419aa7c34af820c08896acef3b65d855188e Android: move drivers' symlinks to /vendor (v2)
+
+# fixes:  This commit has more than one Fixes tag but the commit it
+#         addresses didn't land in branch.
+e17e8934f9e4b008bdfb4f9abd8ed4faa604c7d9 automake: include git_sha1.h.in in release tarball
+
+# stable: This commit is not really needed after 6ac2d169019.
+e8c9e65185de3e821e1e482e77906d1d51efa3ec intel/fs: Use a pure vertical stride for large register strides
+
+# stable: These commits addressed earlier commit 379b24a40d3 which did
+#         not land in branch.
+7364f080f9a272323ed3491f278a1eed3eb9b1a7 intel/nir: Add a helper for getting the NoIndirect mask
+3e63cf893f096a7263eb1856d58417dd2d170d4b intel/nir: Break the linking code into a helper in brw_nir.c
+951a5dc4cc29da996b54ae63eeba1915a3a65b4a intel/nir: Use the correct indirect lowering masks in link_shaders
+
+# stable: These commits resulted in a CTS regression being addressed
+#         at https://bugs.freedesktop.org/show_bug.cgi?id=103626 .
+18fde36ced4279f2577097a1a7d31b55f2f5f141 intel/fs: Use the original destination region for int MUL lowering
+
+# stable: These commits are refactorings rather than fixes.
+fcd4adb9d08094520fb8d118d3448b04c6ec1fd1 intel/fs: Pass builders instead of blocks into emit_[un]zip
+0d905597fe2997c89022c76cdf84dc4fba5eb055 intel/fs: Be more explicit about our placement of [un]zip
+6c00240bc650805e0b66aa6e17dbe69bbe41e446 intel/fs: Don't stomp f0.1 in SIMD16 ballot
+
+# stable: This commit addressed earlier commit ea1b97714d9b which did
+#         not land in branch.
+50330d7115f0d5050ec3cfe6bca2b0136222e097 r600/shader: reserve first register of vertex shader.
+
+# stable: This commit depends on earlier commit 3735af04152b which did
+#         not land in branch.
+a6cc361e5fd2450249847d5ee8093d26ed7ff545 anv/cmd_buffer: Advance the address when initializing clear colors
+
+# stable: This commit addressed earlier commit a62a97933578 which did
+#         not land in branch.
+a07f7b26198ce0f5c8799481a673754968ac5daf anv/cmd_buffer: Take bo_offset into account in fast clear state addresses
+
+# stable: These commits addressed earlier commit 2c4097aff1b which did
+#         not land in branch.
+344252a27f8d875572bbe65641a825af8e73845d i965/bufmgr: Add a helper to mark a BO as external
+0a6a137eb27129e17298cfe9dd620205588ee4f6 i965: Mark BOs as external when we export their handle
+
+# stable: 17.3 nomination only.
+6e4d65f674a70809e6df1a4f716f874828915562 broadcom/vc5: Add vc5_drm.h to the release tarball
+4639cc716e89c69da41c7b54fa938457000fbd4c intel/blorp: Use mocs.tex for depth stencil
+deec84fd771876b5c0755293376df11bc95b473b anv/blorp: Add a device parameter to blorp_surf_for_anv_image
+bc933d0e8462871e19328f66182c35543e334013 intel/blorp: Make the MOCS setting part of blorp_address
+d7a19d69ebc032ba7207fc97bc6f10d5bb35bb99 i965: Use PTE MOCS for all external buffers
+
+# fixes:  This commit is only a typo correction on an error message.
+a6932faae1074445210d392a80b94fdac147b255 glsl: Fix typo fragement -> fragment
+
+# fixes:  This commit makes reference to 2 other commits but none have
+#         made it to the 17.2 queue.
+9b0223046668593deb9c0be0b557994bb5218788 egl: pass the dri2_dpy to the $plat_teardown functions
+
+# extra:  The commit just references a proper fix that has already
+#         landed.
+a31d0382084c8aa860ffcef9b12592c5c44e192f Revert "intel/fs: Use a pure vertical stride for large register strides"
+
+# stable: The commit depends on at least one other that did not land in
+#          branch - 8b3a2578519.
+010214b403de1b5e25a549372ba6192b89e05d06 radeonsi: allow DMABUF exports for local buffers
+
+# stable: This commit addressed earlier commit ead0dfe31ec7 which did
+#         not land in branch.
+709f5bdc4a2bf31f422f5cf60797224c0463c10a swr: Fix KNOB_MAX_WORKER_THREADS thread creation override.
+
+# stable: 17.3 nomination only.
+bf0904e31fb7d9cd8932d582076c8d7beb02ba89 winsys/amdgpu: disable local BOs again due to worse performance
+35c3cbad3c30ad3d40a6811dd6ca2286e013bfc5 radeonsi: don't call force_dcc_off for buffers
+
+# fixes:  This commit addressed earlier commit d1c9f30d7ff7 which did
+#         not land in branch.
+1bdeac545f4ea9f7ca6947f5da7fcf4f5b3010dc radv: port merge tess info from anv
+
+# extra:  The commit just references a fix for an additional change in its v2.
+c1ff99fd70cd2ceb2cac4723e4fd5efc93834746 main: Clear shader program data whenever ProgramBinary is called
+
+# extra:  The commit references a previous commit in which the changes
+#         should have been included but, as clarified by the
+#         developer, it is not needed for stable.
+71e630753ebbee82e8f8709da5488296b2c070c8 r600: set DX10_CLAMP for compute shader too

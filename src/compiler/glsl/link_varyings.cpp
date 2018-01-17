@@ -165,10 +165,12 @@ process_xfb_layout_qualifiers(void *mem_ctx, const gl_linked_shader *sh,
 
          if (var->data.from_named_ifc_block) {
             type = var->get_interface_type();
+
             /* Find the member type before it was altered by lowering */
+            const glsl_type *type_wa = type->without_array();
             member_type =
-               type->fields.structure[type->field_index(var->name)].type;
-            name = ralloc_strdup(NULL, type->without_array()->name);
+               type_wa->fields.structure[type_wa->field_index(var->name)].type;
+            name = ralloc_strdup(NULL, type_wa->name);
          } else {
             type = var->type;
             member_type = NULL;
@@ -1119,7 +1121,6 @@ store_tfeedback_info(struct gl_context *ctx, struct gl_shader_program *prog,
       if (has_xfb_qualifiers) {
          for (unsigned j = 0; j < MAX_FEEDBACK_BUFFERS; j++) {
             if (prog->TransformFeedback.BufferStride[j]) {
-               buffers |= 1 << j;
                explicit_stride[j] = true;
                xfb_prog->sh.LinkedTransformFeedback->Buffers[j].Stride =
                   prog->TransformFeedback.BufferStride[j] / 4;
@@ -1144,10 +1145,24 @@ store_tfeedback_info(struct gl_context *ctx, struct gl_shader_program *prog,
             num_buffers++;
             buffer_stream_id = -1;
             continue;
-         } else if (tfeedback_decls[i].is_varying()) {
+         }
+
+         if (has_xfb_qualifiers) {
+            buffer = tfeedback_decls[i].get_buffer();
+         } else {
+            buffer = num_buffers;
+         }
+
+         if (tfeedback_decls[i].is_varying()) {
             if (buffer_stream_id == -1)  {
                /* First varying writing to this buffer: remember its stream */
                buffer_stream_id = (int) tfeedback_decls[i].get_stream_id();
+
+               /* Only mark a buffer as active when there is a varying
+                * attached to it. This behaviour is based on a revised version
+                * of section 13.2.2 of the GL 4.6 spec.
+                */
+               buffers |= 1 << buffer;
             } else if (buffer_stream_id !=
                        (int) tfeedback_decls[i].get_stream_id()) {
                /* Varying writes to the same buffer from a different stream */
@@ -1162,13 +1177,6 @@ store_tfeedback_info(struct gl_context *ctx, struct gl_shader_program *prog,
                return false;
             }
          }
-
-         if (has_xfb_qualifiers) {
-            buffer = tfeedback_decls[i].get_buffer();
-         } else {
-            buffer = num_buffers;
-         }
-         buffers |= 1 << buffer;
 
          if (!tfeedback_decls[i].store(ctx, prog,
                                        xfb_prog->sh.LinkedTransformFeedback,
