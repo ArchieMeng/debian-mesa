@@ -865,6 +865,7 @@ brwCreateContext(gl_api api,
    brw->tes.base.stage = MESA_SHADER_TESS_EVAL;
    brw->gs.base.stage = MESA_SHADER_GEOMETRY;
    brw->wm.base.stage = MESA_SHADER_FRAGMENT;
+   brw->cs.base.stage = MESA_SHADER_COMPUTE;
    if (brw->gen >= 8) {
       gen8_init_vtable_surface_functions(brw);
       brw->vtbl.emit_depth_stencil_hiz = gen8_emit_depth_stencil_hiz;
@@ -1047,6 +1048,12 @@ intelDestroyContext(__DRIcontext * driContextPriv)
       brw_bo_unreference(brw->gs.base.scratch_bo);
    if (brw->wm.base.scratch_bo)
       brw_bo_unreference(brw->wm.base.scratch_bo);
+
+   brw_bo_unreference(brw->vs.base.push_const_bo);
+   brw_bo_unreference(brw->tcs.base.push_const_bo);
+   brw_bo_unreference(brw->tes.base.push_const_bo);
+   brw_bo_unreference(brw->gs.base.push_const_bo);
+   brw_bo_unreference(brw->wm.base.push_const_bo);
 
    brw_destroy_hw_context(brw->bufmgr, brw->hw_ctx);
 
