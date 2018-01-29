@@ -442,8 +442,8 @@ Section: libs
 Architecture: amd64 arm64 armel armhf i386 kfreebsd-amd64 kfreebsd-i386 mips mips64el mipsel powerpc ppc64 sparc64 ppc64el
 Pre-Depends: ${misc:Pre-Depends}
 Depends:
- libclc-r600 (>= 0.2.0+git20170330-3),
- libclc-amdgcn (>= 0.2.0+git20170330-3),
+ libclc-r600 (>= 0.2.0+git20170330-3~),
+ libclc-amdgcn (>= 0.2.0+git20170330-3~),
  ocl-icd-libopencl1 | libopencl1,
  ${shlibs:Depends},
  ${misc:Depends},

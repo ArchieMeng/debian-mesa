@@ -4,6 +4,12 @@ mesa (17.2.8-0ubuntu0~16.04.1) xenial; urgency=medium
 
  -- Timo Aaltonen <tjaalton@debian.org>  Thu, 18 Jan 2018 16:19:31 +0200
 
+mesa (17.2.4-0ubuntu1~16.04.4) xenial; urgency=medium
+
+  * control: Relax mesa-opencl-icd dependency on libclc. (LP: #1743018)
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Sat, 13 Jan 2018 09:06:08 +0200
+
 mesa (17.2.4-0ubuntu1~16.04.3) xenial; urgency=medium
 
   * i965-disable-l3-cache-alloc-for-ext-buffers.diff:
