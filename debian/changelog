@@ -1,8 +1,15 @@
-mesa (18.0.0~rc4-1ubuntu4) UNRELEASED; urgency=medium
+mesa (18.0.0~rc5-1ubuntu1) UNRELEASED; urgency=medium
 
+  [ Timo Aaltonen ]
+  * Merge from Debian experimental.
   * Drop Mir EGL patches, they're not needed anymore.
   * Revert dropping libwayland-egl-mesa for now, until the wayland FFE
     is acked.
+  * dri3-reinstate-get_dri_screen-callback.diff: Dropped, upstream.
+
+  [ Daniel van Vugt ]
+  * Add disable-intel-ccs-compression.patch to avoid screen corruption
+    when logging into Xorg sessions (LP: #1753776)
 
  -- Timo Aaltonen <tjaalton@debian.org>  Tue, 06 Mar 2018 17:59:08 +0200
 
