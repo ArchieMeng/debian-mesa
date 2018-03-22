@@ -1,4 +1,4 @@
-mesa (18.0.0~rc5-1ubuntu1) UNRELEASED; urgency=medium
+mesa (18.0.0~rc5-1ubuntu1) bionic; urgency=medium
 
   [ Timo Aaltonen ]
   * Merge from Debian experimental.
@@ -11,7 +11,7 @@ mesa (18.0.0~rc5-1ubuntu1) UNRELEASED; urgency=medium
   * Add disable-intel-ccs-compression.patch to avoid screen corruption
     when logging into Xorg sessions (LP: #1753776)
 
- -- Timo Aaltonen <tjaalton@debian.org>  Tue, 06 Mar 2018 17:59:08 +0200
+ -- Timo Aaltonen <tjaalton@debian.org>  Thu, 22 Mar 2018 09:29:44 +0200
 
 mesa (18.0.0~rc5-1) experimental; urgency=medium
 
