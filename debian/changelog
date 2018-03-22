@@ -1,6 +1,8 @@
 mesa (18.0.0~rc4-1ubuntu4) UNRELEASED; urgency=medium
 
   * Drop Mir EGL patches, they're not needed anymore.
+  * Revert dropping libwayland-egl-mesa for now, until the wayland FFE
+    is acked.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Tue, 06 Mar 2018 17:59:08 +0200
 
