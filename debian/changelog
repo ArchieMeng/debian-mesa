@@ -1,6 +1,7 @@
 mesa (18.0.0-1ubuntu1) UNRELEASED; urgency=medium
 
   * Merge from Debian experimental.
+  * Drop libwayland-egl-mesa again.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Tue, 03 Apr 2018 11:23:13 +0300
 
