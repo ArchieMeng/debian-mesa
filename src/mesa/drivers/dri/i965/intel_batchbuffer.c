@@ -339,8 +339,11 @@ grow_buffer(struct brw_context *brw,
       /* We can't safely use realloc, as it may move the existing buffer,
        * breaking existing pointers the caller may still be using.  Just
        * malloc a new copy and memcpy it like the normal BO path.
+       *
+       * Use bo->size rather than new_size because the bufmgr may have
+       * rounded up the size, and we want the shadow size to match.
        */
-      grow->map = malloc(new_size);
+      grow->map = malloc(new_bo->size);
    } else {
       grow->map = brw_bo_map(brw, new_bo, MAP_READ | MAP_WRITE);
    }
@@ -1060,7 +1063,7 @@ brw_batch_references(struct intel_batchbuffer *batch, struct brw_bo *bo)
 static uint64_t
 emit_reloc(struct intel_batchbuffer *batch,
            struct brw_reloc_list *rlist, uint32_t offset,
-           struct brw_bo *target, uint32_t target_offset,
+           struct brw_bo *target, int32_t target_offset,
            unsigned int reloc_flags)
 {
    assert(target != NULL);
