@@ -1,0 +1,126 @@
+From d7a19d69ebc032ba7207fc97bc6f10d5bb35bb99 Mon Sep 17 00:00:00 2001
+From: Jason Ekstrand <jason.ekstrand@intel.com>
+Date: Fri, 3 Nov 2017 15:26:17 -0700
+Subject: [PATCH] i965: Use PTE MOCS for all external buffers
+
+We were already using PTE for all render targets in case one happened to
+get scanned out.  However, this still wasn't 100% correct because there
+are still possibly cases where we may want to texture from an external
+buffer even though we don't know the caching mode.  This can happen, for
+instance, on buffers imported from another GPU via prime.
+
+Bugzilla: https://bugs.freedesktop.org/show_bug.cgi?id=101691
+Cc: "17.3" <mesa-stable@lists.freedesktop.org>
+Tested-by: Lyude Paul <lyude@redhat.com>
+Reviewed-by: Kenneth Graunke <kenneth@whitecape.org>
+---
+ src/mesa/drivers/dri/i965/brw_blorp.c            |  7 ++++---
+ src/mesa/drivers/dri/i965/brw_wm_surface_state.c | 21 ++++++++++++++-------
+ 2 files changed, 18 insertions(+), 10 deletions(-)
+
+--- a/src/mesa/drivers/dri/i965/brw_blorp.c
++++ b/src/mesa/drivers/dri/i965/brw_blorp.c
+@@ -108,14 +108,14 @@ brw_blorp_init(struct brw_context *brw)
+    brw->blorp.upload_shader = brw_blorp_upload_shader;
+ }
+ 
+-static uint32_t tex_mocs[] = {
++static uint32_t wb_mocs[] = {
+    [7] = GEN7_MOCS_L3,
+    [8] = BDW_MOCS_WB,
+    [9] = SKL_MOCS_WB,
+    [10] = CNL_MOCS_WB,
+ };
+ 
+-static uint32_t rb_mocs[] = {
++static uint32_t pte_mocs[] = {
+    [7] = GEN7_MOCS_L3,
+    [8] = BDW_MOCS_PTE,
+    [9] = SKL_MOCS_PTE,
+@@ -154,7 +154,8 @@ blorp_surf_for_miptree(struct brw_contex
+       .read_domains = is_render_target ? I915_GEM_DOMAIN_RENDER :
+                                          I915_GEM_DOMAIN_SAMPLER,
+       .write_domain = is_render_target ? I915_GEM_DOMAIN_RENDER : 0,
+-      .mocs = is_render_target ? rb_mocs[devinfo->gen] : tex_mocs[devinfo->gen],
++      .mocs = (is_render_target || mt->bo->external) ? pte_mocs[devinfo->gen] :
++                                                       wb_mocs[devinfo->gen],
+    };
+ 
+    surf->aux_usage = aux_usage;
+--- a/src/mesa/drivers/dri/i965/brw_wm_surface_state.c
++++ b/src/mesa/drivers/dri/i965/brw_wm_surface_state.c
+@@ -60,20 +60,26 @@ enum {
+    INTEL_AUX_BUFFER_DISABLED = 1 << 1,
+ };
+ 
+-uint32_t tex_mocs[] = {
++uint32_t wb_mocs[] = {
+    [7] = GEN7_MOCS_L3,
+    [8] = BDW_MOCS_WB,
+    [9] = SKL_MOCS_WB,
+    [10] = CNL_MOCS_WB,
+ };
+ 
+-uint32_t rb_mocs[] = {
++uint32_t pte_mocs[] = {
+    [7] = GEN7_MOCS_L3,
+    [8] = BDW_MOCS_PTE,
+    [9] = SKL_MOCS_PTE,
+    [10] = CNL_MOCS_PTE,
+ };
+ 
++static uint32_t
++get_tex_mocs(unsigned int gen, struct brw_bo *bo)
++{
++   return (bo && bo->external ? pte_mocs : wb_mocs)[gen];
++}
++
+ static void
+ get_isl_surf(struct brw_context *brw, struct intel_mipmap_tree *mt,
+              GLenum target, struct isl_view *view,
+@@ -244,7 +250,7 @@ brw_update_renderbuffer_surface(struct b
+ 
+    uint32_t offset;
+    brw_emit_surface_state(brw, mt, mt->target, view, aux_usage,
+-                          rb_mocs[brw->gen],
++                          pte_mocs[brw->gen],
+                           &offset, surf_index,
+                           I915_GEM_DOMAIN_RENDER,
+                           I915_GEM_DOMAIN_RENDER);
+@@ -589,7 +595,7 @@ brw_update_texture_surface(struct gl_con
+          aux_usage = ISL_AUX_USAGE_NONE;
+ 
+       brw_emit_surface_state(brw, mt, mt->target, view, aux_usage,
+-                             tex_mocs[brw->gen],
++                             get_tex_mocs(brw->gen, mt->bo),
+                              surf_offset, surf_index,
+                              I915_GEM_DOMAIN_SAMPLER, 0);
+    }
+@@ -615,7 +621,7 @@ brw_emit_buffer_surface_state(struct brw
+                          .size = buffer_size,
+                          .format = surface_format,
+                          .stride = pitch,
+-                         .mocs = tex_mocs[brw->gen]);
++                         .mocs = get_tex_mocs(brw->gen, bo));
+ 
+    if (bo) {
+       brw_emit_reloc(&brw->batch, *out_offset + brw->isl_dev.ss.addr_offset,
+@@ -1164,7 +1170,7 @@ update_renderbuffer_read_surfaces(struct
+                aux_usage = ISL_AUX_USAGE_NONE;
+ 
+             brw_emit_surface_state(brw, irb->mt, target, view, aux_usage,
+-                                   tex_mocs[brw->gen],
++                                   get_tex_mocs(brw->gen, irb->mt->bo),
+                                    surf_offset, surf_index,
+                                    I915_GEM_DOMAIN_SAMPLER, 0);
+ 
+@@ -1657,7 +1663,8 @@ update_image_surface(struct brw_context
+                                                        view.base_array_layer,
+                                                        view.array_len));
+             brw_emit_surface_state(brw, mt, mt->target, view,
+-                                   ISL_AUX_USAGE_NONE, tex_mocs[brw->gen],
++                                   ISL_AUX_USAGE_NONE,
++                                   get_tex_mocs(brw->gen, mt->bo),
+                                    surf_offset, surf_index,
+                                    I915_GEM_DOMAIN_SAMPLER,
+                                    access == GL_READ_ONLY ? 0 :
