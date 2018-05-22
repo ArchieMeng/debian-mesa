@@ -5,3 +5,5 @@
 egl-platform-mir.patch
 egl-platform-rs.patch
 khr_platform_mir.patch
+dont-enable-10bpc-by-default.diff
+disable-intel-ccs-compression.diff
