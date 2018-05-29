@@ -67,8 +67,7 @@ $(intermediates)/vulkan/dummy.c:
 $(intermediates)/vulkan/anv_entrypoints.h: $(intermediates)/vulkan/dummy.c
 	$(VK_ENTRYPOINTS_SCRIPT) \
 		--outdir $(dir $@) \
-		--xml $(MESA_TOP)/src/vulkan/registry/vk.xml \
-		--xml $(MESA_TOP)/src/vulkan/registry/vk_android_native_buffer.xml
+		--xml $(MESA_TOP)/src/vulkan/registry/vk.xml
 
 LOCAL_EXPORT_C_INCLUDE_DIRS := \
         $(intermediates)
@@ -192,6 +191,26 @@ include $(MESA_COMMON_MK)
 include $(BUILD_STATIC_LIBRARY)
 
 #
+# libanv for gen11
+#
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := libmesa_anv_gen11
+LOCAL_MODULE_CLASS := STATIC_LIBRARIES
+
+LOCAL_SRC_FILES := $(VULKAN_GEN11_FILES)
+LOCAL_CFLAGS := -DGEN_VERSIONx10=110
+
+LOCAL_C_INCLUDES := $(ANV_INCLUDES)
+
+LOCAL_WHOLE_STATIC_LIBRARIES := libmesa_anv_entrypoints libmesa_genxml
+
+LOCAL_SHARED_LIBRARIES := $(ANV_SHARED_LIBRARIES)
+
+include $(MESA_COMMON_MK)
+include $(BUILD_STATIC_LIBRARY)
+
+#
 # libmesa_vulkan_common
 #
 
@@ -225,21 +244,18 @@ $(intermediates)/vulkan/anv_entrypoints.c:
 	@mkdir -p $(dir $@)
 	$(VK_ENTRYPOINTS_SCRIPT) \
 		--xml $(MESA_TOP)/src/vulkan/registry/vk.xml \
-		--xml $(MESA_TOP)/src/vulkan/registry/vk_android_native_buffer.xml \
 		--outdir $(dir $@)
 
 $(intermediates)/vulkan/anv_extensions.c:
 	@mkdir -p $(dir $@)
 	$(VK_EXTENSIONS_SCRIPT) \
 		--xml $(MESA_TOP)/src/vulkan/registry/vk.xml \
-		--xml $(MESA_TOP)/src/vulkan/registry/vk_android_native_buffer.xml \
 		--out-c $@
 
 $(intermediates)/vulkan/anv_extensions.h:
 	@mkdir -p $(dir $@)
 	$(VK_EXTENSIONS_SCRIPT) \
 		--xml $(MESA_TOP)/src/vulkan/registry/vk.xml \
-		--xml $(MESA_TOP)/src/vulkan/registry/vk_android_native_buffer.xml \
 		--out-h $@
 
 LOCAL_SHARED_LIBRARIES := $(ANV_SHARED_LIBRARIES)
@@ -280,12 +296,14 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
 	libmesa_blorp \
 	libmesa_compiler \
 	libmesa_intel_common \
+	libmesa_intel_dev \
 	libmesa_vulkan_common \
 	libmesa_anv_gen7 \
 	libmesa_anv_gen75 \
 	libmesa_anv_gen8 \
 	libmesa_anv_gen9 \
 	libmesa_anv_gen10 \
+	libmesa_anv_gen11 \
 	libmesa_intel_compiler \
 	libmesa_anv_entrypoints
 

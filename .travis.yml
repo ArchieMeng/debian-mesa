@@ -17,11 +17,11 @@ env:
     - DRI2PROTO_VERSION=dri2proto-2.8
     - LIBPCIACCESS_VERSION=libpciaccess-0.13.4
     - LIBDRM_VERSION=libdrm-2.4.74
-    - XCBPROTO_VERSION=xcb-proto-1.11
-    - LIBXCB_VERSION=libxcb-1.11
+    - XCBPROTO_VERSION=xcb-proto-1.13
+    - LIBXCB_VERSION=libxcb-1.13
     - LIBXSHMFENCE_VERSION=libxshmfence-1.2
     - LIBVDPAU_VERSION=libvdpau-1.1
-    - LIBVA_VERSION=libva-1.6.2
+    - LIBVA_VERSION=libva-1.7.0
     - LIBWAYLAND_VERSION=wayland-1.11.1
     - WAYLAND_PROTOCOLS_VERSION=wayland-protocols-1.8
     - PKG_CONFIG_PATH=$HOME/prefix/lib/pkgconfig:$HOME/prefix/share/pkgconfig
@@ -92,12 +92,10 @@ matrix:
         - BUILD=make
         - MAKEFLAGS="-j4"
         - MAKE_CHECK_COMMAND="true"
-        - LLVM_VERSION=3.9
+        - LLVM_VERSION=4.0
         - LLVM_CONFIG="llvm-config-${LLVM_VERSION}"
         - OVERRIDE_CC="gcc-4.8"
         - OVERRIDE_CXX="g++-4.8"
-        # New binutils linker is required for llvm-3.9
-        - OVERRIDE_PATH=/usr/lib/binutils-2.26/bin
         - DRI_LOADERS="--disable-glx --disable-gbm --disable-egl"
         - DRI_DRIVERS=""
         - GALLIUM_ST="--enable-dri --disable-opencl --disable-xa --disable-nine --disable-xvmc --disable-vdpau --disable-va --disable-omx-bellagio --disable-gallium-osmesa"
@@ -107,13 +105,41 @@ matrix:
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-3.9
+            - llvm-toolchain-trusty-4.0
           packages:
-            - binutils-2.26
             # LLVM packaging is broken and misses these dependencies
             - libedit-dev
             # From sources above
-            - llvm-3.9-dev
+            - llvm-4.0-dev
+            # Common
+            - xz-utils
+            - x11proto-xf86vidmode-dev
+            - libexpat1-dev
+            - libx11-xcb-dev
+            - libelf-dev
+            - libunwind8-dev
+    - env:
+        - LABEL="make Gallium Drivers RadeonSI"
+        - BUILD=make
+        - MAKEFLAGS="-j4"
+        - MAKE_CHECK_COMMAND="true"
+        - LLVM_VERSION=4.0
+        - LLVM_CONFIG="llvm-config-${LLVM_VERSION}"
+        - DRI_LOADERS="--disable-glx --disable-gbm --disable-egl"
+        - DRI_DRIVERS=""
+        - GALLIUM_ST="--enable-dri --disable-opencl --disable-xa --disable-nine --disable-xvmc --disable-vdpau --disable-va --disable-omx-bellagio --disable-gallium-osmesa"
+        - GALLIUM_DRIVERS="radeonsi"
+        - VULKAN_DRIVERS=""
+        - LIBUNWIND_FLAGS="--enable-libunwind"
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-4.0
+          packages:
+            # LLVM packaging is broken and misses these dependencies
+            - libedit-dev
+            # From sources above
+            - llvm-4.0-dev
             # Common
             - xz-utils
             - x11proto-xf86vidmode-dev
@@ -133,7 +159,7 @@ matrix:
         - DRI_LOADERS="--disable-glx --disable-gbm --disable-egl"
         - DRI_DRIVERS=""
         - GALLIUM_ST="--enable-dri --disable-opencl --disable-xa --disable-nine --disable-xvmc --disable-vdpau --disable-va --disable-omx-bellagio --disable-gallium-osmesa"
-        - GALLIUM_DRIVERS="i915,nouveau,pl111,r300,r600,radeonsi,freedreno,svga,swrast,vc4,virgl,etnaviv,imx"
+        - GALLIUM_DRIVERS="i915,nouveau,pl111,r300,r600,freedreno,svga,swrast,vc4,virgl,etnaviv,imx"
         - VULKAN_DRIVERS=""
         - LIBUNWIND_FLAGS="--enable-libunwind"
       addons:
@@ -168,7 +194,7 @@ matrix:
         - DRI_LOADERS="--disable-glx --disable-gbm --disable-egl"
         - DRI_DRIVERS=""
         - GALLIUM_ST="--disable-dri --enable-opencl --enable-opencl-icd --enable-llvm --disable-xa --disable-nine --disable-xvmc --disable-vdpau --disable-va --disable-omx-bellagio --disable-gallium-osmesa"
-        - GALLIUM_DRIVERS="r600,radeonsi"
+        - GALLIUM_DRIVERS="r600"
         - VULKAN_DRIVERS=""
         - LIBUNWIND_FLAGS="--enable-libunwind"
       addons:
@@ -305,10 +331,8 @@ matrix:
         - BUILD=make
         - MAKEFLAGS="-j4"
         - MAKE_CHECK_COMMAND="make -C src/gtest check && make -C src/intel check"
-        - LLVM_VERSION=3.9
+        - LLVM_VERSION=4.0
         - LLVM_CONFIG="llvm-config-${LLVM_VERSION}"
-        # New binutils linker is required for llvm-3.9
-        - OVERRIDE_PATH=/usr/lib/binutils-2.26/bin
         - DRI_LOADERS="--disable-glx --disable-gbm --disable-egl --with-platforms=x11,wayland"
         - DRI_DRIVERS=""
         - GALLIUM_ST="--enable-dri --enable-dri3 --disable-opencl --disable-xa --disable-nine --disable-xvmc --disable-vdpau --disable-va --disable-omx-bellagio --disable-gallium-osmesa"
@@ -318,13 +342,12 @@ matrix:
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-3.9
+            - llvm-toolchain-trusty-4.0
           packages:
-            - binutils-2.26
             # LLVM packaging is broken and misses these dependencies
             - libedit-dev
             # From sources above
-            - llvm-3.9-dev
+            - llvm-4.0-dev
             # Common
             - xz-utils
             - x11proto-xf86vidmode-dev
@@ -376,7 +399,7 @@ matrix:
         - BUILD=scons
         - SCONSFLAGS="-j4"
         - SCONS_TARGET="swr=1"
-        - LLVM_VERSION=3.9
+        - LLVM_VERSION=4.0
         - LLVM_CONFIG="llvm-config-${LLVM_VERSION}"
         # Keep it symmetrical to the make build. There's no actual SWR, yet.
         - SCONS_CHECK_COMMAND="true"
@@ -385,13 +408,13 @@ matrix:
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-3.9
+            - llvm-toolchain-trusty-4.0
           packages:
             - scons
             # LLVM packaging is broken and misses these dependencies
             - libedit-dev
             # From sources above
-            - llvm-3.9-dev
+            - llvm-4.0-dev
             # Common
             - xz-utils
             - x11proto-xf86vidmode-dev
@@ -404,6 +427,11 @@ matrix:
         - MAKEFLAGS="-j4"
         - MAKE_CHECK_COMMAND="make check"
         - DRI_LOADERS="--with-platforms=x11 --disable-egl"
+      os: osx
+    - env:
+        - LABEL="macOS meson"
+        - BUILD=meson
+        - MESON_OPTIONS="-Degl=false"
       os: osx
 
 before_install:
