@@ -1,6 +1,8 @@
 mesa (18.1.1-1ubuntu1) UNRELEASED; urgency=medium
 
   * Merge from Debian.
+  * glvnd-fix-a-segfault-in-eglgetprocaddess.diff: Backport a commit to
+    fix a segfault. (LP: #1776499)
 
  -- Timo Aaltonen <tjaalton@debian.org>  Wed, 13 Jun 2018 12:04:23 +0300
 

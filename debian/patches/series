@@ -7,3 +7,4 @@ glvnd-fix-gl-dot-pc.patch
 # Ubuntu patches.
 dont-enable-10bpc-by-default.diff
 disable-intel-ccs-compression.diff
+glvnd-fix-a-segfault-in-eglgetprocaddess.diff
