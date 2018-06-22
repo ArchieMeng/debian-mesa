@@ -1,3 +1,9 @@
+mesa (18.1.2-1ubuntu1) cosmic; urgency=medium
+
+  * Merge from Debian.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Fri, 22 Jun 2018 08:34:53 +0300
+
 mesa (18.1.2-1) unstable; urgency=medium
 
   * New upstream release.
