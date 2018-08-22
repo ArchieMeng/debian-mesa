@@ -116,7 +116,7 @@ struct string_map_entry {
    uint32_t num;
 };
 
-/* We use a big string constant to avoid lots of reloctions from the entry
+/* We use a big string constant to avoid lots of relocations from the entry
  * point table to lots of little strings. The entries in the entry point table
  * store the index into this big string.
  */
@@ -136,7 +136,7 @@ static const struct string_map_entry string_map_entries[] = {
 /* Hash table stats:
  * size ${len(strmap.sorted_strings)} entries
  * collisions entries:
-% for i in xrange(10):
+% for i in range(10):
  *     ${i}${'+' if i == 9 else ' '}     ${strmap.collisions[i]}
 % endfor
  */
@@ -413,9 +413,6 @@ def get_entrypoints(doc, entrypoints_to_defines, start_index):
         if ext_name not in supported_exts:
             continue
 
-        if extension.attrib['supported'] != 'vulkan':
-            continue
-
         ext = supported_exts[ext_name]
         ext.type = extension.attrib['type']
 
@@ -433,7 +430,7 @@ def get_entrypoints(doc, entrypoints_to_defines, start_index):
             e_clone.name = e.name
             entrypoints[e.name] = e_clone
 
-    return [e for e in entrypoints.itervalues() if e.enabled]
+    return [e for e in entrypoints.values() if e.enabled]
 
 
 def get_entrypoints_defines(doc):
@@ -449,7 +446,10 @@ def get_entrypoints_defines(doc):
 
     for extension in doc.findall('./extensions/extension[@platform]'):
         platform = extension.attrib['platform']
-        define = 'VK_USE_PLATFORM_' + platform.upper() + '_KHR'
+        ext = '_KHR'
+        if platform.upper() == 'XLIB_XRANDR':
+            ext = '_EXT'
+        define = 'VK_USE_PLATFORM_' + platform.upper() + ext
 
         for entrypoint in extension.findall('./require/command'):
             fullname = entrypoint.attrib['name']

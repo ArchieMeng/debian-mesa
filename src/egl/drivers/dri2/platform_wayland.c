@@ -45,19 +45,10 @@
 #include "util/u_vector.h"
 #include "eglglobals.h"
 
+#include <wayland-egl-backend.h>
 #include <wayland-client.h>
 #include "wayland-drm-client-protocol.h"
 #include "linux-dmabuf-unstable-v1-client-protocol.h"
-
-#include "wayland/wayland-egl/wayland-egl-backend.h"
-
-#ifndef DRM_FORMAT_MOD_INVALID
-#define DRM_FORMAT_MOD_INVALID ((1ULL << 56) - 1)
-#endif
-
-#ifndef DRM_FORMAT_MOD_LINEAR
-#define DRM_FORMAT_MOD_LINEAR 0
-#endif
 
 /*
  * The index of entries in this table is used as a bitmask in
@@ -82,6 +73,18 @@ static const struct dri2_wl_visual {
      WL_DRM_FORMAT_ARGB2101010, WL_SHM_FORMAT_ARGB2101010,
      __DRI_IMAGE_FORMAT_ARGB2101010, 32,
      { 0x3ff00000, 0x000ffc00, 0x000003ff, 0xc0000000 }
+   },
+   {
+     "XBGR2101010",
+     WL_DRM_FORMAT_XBGR2101010, WL_SHM_FORMAT_XBGR2101010,
+     __DRI_IMAGE_FORMAT_XBGR2101010, 32,
+     { 0x000003ff, 0x000ffc00, 0x3ff00000, 0x00000000 }
+   },
+   {
+     "ABGR2101010",
+     WL_DRM_FORMAT_ABGR2101010, WL_SHM_FORMAT_ABGR2101010,
+     __DRI_IMAGE_FORMAT_ABGR2101010, 32,
+     { 0x000003ff, 0x000ffc00, 0x3ff00000, 0xc0000000 }
    },
    {
      "XRGB8888",
@@ -198,6 +201,17 @@ resize_callback(struct wl_egl_window *wl_win, void *data)
    struct dri2_egl_display *dri2_dpy =
       dri2_egl_display(dri2_surf->base.Resource.Display);
 
+   /* Update the surface size as soon as native window is resized; from user
+    * pov, this makes the effect that resize is done inmediately after native
+    * window resize, without requiring to wait until the first draw.
+    *
+    * A more detailed and lengthy explanation can be found at
+    * https://lists.freedesktop.org/archives/mesa-dev/2018-June/196474.html
+    */
+   if (!dri2_surf->back) {
+      dri2_surf->base.Width = wl_win->width;
+      dri2_surf->base.Height = wl_win->height;
+   }
    dri2_dpy->flush->invalidate(dri2_surf->dri_drawable);
 }
 
@@ -249,6 +263,15 @@ dri2_wl_create_window_surface(_EGLDriver *drv, _EGLDisplay *disp,
 
    config = dri2_get_dri_config(dri2_conf, EGL_WINDOW_BIT,
                                 dri2_surf->base.GLColorspace);
+
+   if (!config) {
+      _eglError(EGL_BAD_MATCH, "Unsupported surfacetype/colorspace configuration");
+      goto cleanup_surf;
+   }
+
+   dri2_surf->base.Width = window->width;
+   dri2_surf->base.Height = window->height;
+
    visual_idx = dri2_wl_visual_idx_from_config(dri2_dpy, config);
    assert(visual_idx != -1);
 
@@ -292,7 +315,7 @@ dri2_wl_create_window_surface(_EGLDriver *drv, _EGLDisplay *disp,
                       dri2_surf->wl_queue);
 
    dri2_surf->wl_win = window;
-   dri2_surf->wl_win->private = dri2_surf;
+   dri2_surf->wl_win->driver_private = dri2_surf;
    dri2_surf->wl_win->destroy_window_callback = destroy_window_callback;
    if (dri2_dpy->flush)
       dri2_surf->wl_win->resize_callback = resize_callback;
@@ -378,7 +401,7 @@ dri2_wl_destroy_surface(_EGLDriver *drv, _EGLDisplay *disp, _EGLSurface *surf)
       wl_callback_destroy(dri2_surf->throttle_callback);
 
    if (dri2_surf->wl_win) {
-      dri2_surf->wl_win->private = NULL;
+      dri2_surf->wl_win->driver_private = NULL;
       dri2_surf->wl_win->resize_callback = NULL;
       dri2_surf->wl_win->destroy_window_callback = NULL;
    }
@@ -568,8 +591,8 @@ update_buffers(struct dri2_egl_surface *dri2_surf)
    struct dri2_egl_display *dri2_dpy =
       dri2_egl_display(dri2_surf->base.Resource.Display);
 
-   if (dri2_surf->base.Width != dri2_surf->wl_win->width ||
-       dri2_surf->base.Height != dri2_surf->wl_win->height) {
+   if (dri2_surf->base.Width != dri2_surf->wl_win->attached_width ||
+       dri2_surf->base.Height != dri2_surf->wl_win->attached_height) {
 
       dri2_wl_release_buffers(dri2_surf);
 
@@ -1623,8 +1646,8 @@ swrast_update_buffers(struct dri2_egl_surface *dri2_surf)
    if (dri2_surf->back)
       return 0;
 
-   if (dri2_surf->base.Width != dri2_surf->wl_win->width ||
-       dri2_surf->base.Height != dri2_surf->wl_win->height) {
+   if (dri2_surf->base.Width != dri2_surf->wl_win->attached_width ||
+       dri2_surf->base.Height != dri2_surf->wl_win->attached_height) {
 
       dri2_wl_release_buffers(dri2_surf);
 
