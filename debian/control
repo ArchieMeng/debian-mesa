@@ -248,6 +248,7 @@ Depends:
 Provides: libglx-vendor
 Breaks:
  libopengl-perl (<< 0.6704+dfsg-2),
+ glx-diversions (<< 0.8.4~),
  nvidia-304,
  nvidia-340 (<= 340.106-0ubuntu1),
  nvidia-384 (<< 390.25),
