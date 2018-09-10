@@ -1,15 +1,15 @@
-mesa (18.2.0-1) experimental; urgency=medium
-
-  * New upstream release.
-
- -- Timo Aaltonen <tjaalton@debian.org>  Mon, 10 Sep 2018 12:54:33 +0300
-
-mesa (18.2.0~rc4-1ubuntu1) UNRELEASED; urgency=medium
+mesa (18.2.0-1ubuntu1) UNRELEASED; urgency=medium
 
   * Merge from Debian experimental. (LP: #1714178)
   * glvnd-fix-a-segfault-in-eglgetprocaddess.diff: Dropped, upstream.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Wed, 22 Aug 2018 20:43:54 +0300
+
+mesa (18.2.0-1) experimental; urgency=medium
+
+  * New upstream release.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Mon, 10 Sep 2018 12:54:33 +0300
 
 mesa (18.2.0~rc4-1) experimental; urgency=medium
 
