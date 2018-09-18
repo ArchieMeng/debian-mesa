@@ -1,3 +1,17 @@
+mesa (18.2.0-2) experimental; urgency=medium
+
+  * control: Bump build-dep on libxcb-dri3-dev and libxcb-present-dev to
+    1.13. (Closes: #908827)
+  * control: Build-depend on x11proto-dev, modify libegl1-mesa-dev and
+    libgl1-mesa-dev depends.
+  * Migrate to llvm/clang-7.
+  * Enable gallium D3D state tracker, thanks Antonio Russo and Andrew
+    Cook! (Closes: #863972)
+  * rules: Enable v3d on arm. Thanks, Fabio Pedretti!
+  * rules: Drop enabling texture float, it's enabled by default now.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Tue, 18 Sep 2018 14:49:24 +0300
+
 mesa (18.2.0-1ubuntu1) UNRELEASED; urgency=medium
 
   * Merge from Debian experimental. (LP: #1714178)
