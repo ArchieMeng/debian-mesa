@@ -1,3 +1,19 @@
+mesa (18.2.1-1) experimental; urgency=medium
+
+  * New upstream release.
+  * control: Add libd3dadapter9-mesa to -dev depends.
+  * control: Fix libd3dadapter9-mesa-dev section, and drop
+    shlibs:Depends.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Mon, 24 Sep 2018 15:28:35 +0300
+
+mesa (18.2.0-3) experimental; urgency=medium
+
+  * control, rules: Nine needs llvmpipe, and also makes sense to build it
+    only on archs that have wine.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Wed, 19 Sep 2018 13:41:29 +0300
+
 mesa (18.2.0-2ubuntu1) UNRELEASED; urgency=medium
 
   * Merge from Debian experimental. (LP: #1714178)
