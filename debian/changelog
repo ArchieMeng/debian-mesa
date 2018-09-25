@@ -1,9 +1,9 @@
-mesa (18.2.1-1ubuntu1) UNRELEASED; urgency=medium
+mesa (18.2.1-1ubuntu1) cosmic; urgency=medium
 
   * Merge from Debian experimental. (LP: #1714178, #1792873)
   * glvnd-fix-a-segfault-in-eglgetprocaddess.diff: Dropped, upstream.
 
- -- Timo Aaltonen <tjaalton@debian.org>  Wed, 22 Aug 2018 20:43:54 +0300
+ -- Timo Aaltonen <tjaalton@debian.org>  Tue, 25 Sep 2018 23:26:15 +0300
 
 mesa (18.2.1-1) experimental; urgency=medium
 
