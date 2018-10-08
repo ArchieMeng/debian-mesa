@@ -1,3 +1,9 @@
+mesa (18.2.2-0ubuntu1) cosmic; urgency=medium
+
+  * New upstream bugfix release. (LP: #1796367, #1794923)
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Mon, 08 Oct 2018 14:23:09 +0300
+
 mesa (18.2.1-1ubuntu1) cosmic; urgency=medium
 
   * Merge from Debian experimental. (LP: #1714178, #1792873)
