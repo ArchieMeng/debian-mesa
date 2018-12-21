@@ -1,3 +1,9 @@
+mesa (18.3.0-2) UNRELEASED; urgency=medium
+
+  * debian/control: satisfy cross build dependencies by native packages.
+
+ -- Héctor Orón Martínez <zumbi@debian.org>  Fri, 21 Dec 2018 22:35:20 +0100
+
 mesa (18.3.0-1) experimental; urgency=medium
 
   [ Timo Aaltonen ]
