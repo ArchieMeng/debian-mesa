@@ -14,7 +14,9 @@ Build-Depends:
  libdrm-dev (>= 2.4.107-4),
  libx11-dev,
  libxxf86vm-dev,
+ libepoxy-dev,
  libexpat1-dev,
+ libgtk-3-dev,
  libsensors-dev [!hurd-any],
  libxfixes-dev,
  libxext-dev,
@@ -434,5 +436,31 @@ Description: free implementation of the OpenCL API -- ICD runtime
  Language) library, which is intended for use with an ICD loader. OpenCL
  provides a standardized interface for computational analysis on graphical
  processing units.
+
+Package: mesa-tools
+Section: utils
+Architecture: linux-any kfreebsd-any
+Depends:
+ mesa-tools-libs,
+ ${shlibs:Depends},
+ ${misc:Depends},
+Pre-Depends: ${misc:Pre-Depends}
+Description: Mesa development tools
+ This package provids several tools used during Mesa development and enablement
+ on various platforms, including e.g. drm-shim.
+
+Package: mesa-tools-libs
+Section: utils
+Architecture: linux-any kfreebsd-any
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends}
+Description: Mesa development tools
+ This package provids several tools used during Mesa development and enablement
+ on various platforms, including e.g. drm-shim.
+ .
+ This package contains shared libraries used by these tools.
 
 # vim: tw=0
