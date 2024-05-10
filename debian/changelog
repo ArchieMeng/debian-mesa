@@ -1,6 +1,8 @@
 mesa (24.0.7-1) UNRELEASED; urgency=medium
 
   * New upstream release.
+  * source: Switch to source format 3.0 (quilt), because upstream
+    provides only .xz tarballs. (Closes: #1036176)
 
  -- Timo Aaltonen <tjaalton@debian.org>  Fri, 10 May 2024 10:03:28 +0300
 
