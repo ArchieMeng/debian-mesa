@@ -1,3 +1,9 @@
+mesa (24.0.7-1droidian1) unstable; urgency=medium
+
+  * Enable kgsl support for freedreno driver.
+
+ -- Archie Meng <archiemeng@protonmail.com>  Wed, 22 May 2024 22:12:42 +0800
+
 mesa (24.0.7-1) unstable; urgency=medium
 
   * New upstream release.
