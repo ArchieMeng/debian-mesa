@@ -1,0 +1,31 @@
+name: Build CI
+
+on:
+  push:
+    branches: [ "droidian" ]
+  pull_request:
+    branches: [ "droidian" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Build packages in the container
+      run: |
+        docker run \
+        -v ${{ github.workspace }}:/sources -v /tmp/results:/results \
+        quay.io/droidian/build-essential:next-arm64 /bin/bash -c '''
+        apt update
+        cd /sources
+        apt build-dep -y . 
+        dpkg-buildpackage -us -uc -b
+        mv -v ../*.deb ../*.buildinfo ../*.changes /results
+        '''
+    - uses: actions/upload-artifact@v4
+      with:
+        path: /tmp/results
