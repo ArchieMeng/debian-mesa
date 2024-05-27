@@ -1,3 +1,10 @@
+mesa (24.1.0-2) UNRELEASED; urgency=medium
+
+  * control: Add python3-pycparser to build-depends for armhf, arm64.
+    (Closes: #1071222)
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Mon, 27 May 2024 15:05:27 +0300
+
 mesa (24.1.0-1) experimental; urgency=medium
 
   * New upstream release.
