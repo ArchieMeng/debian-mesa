@@ -2,6 +2,7 @@ mesa (24.1.1-1) UNRELEASED; urgency=medium
 
   * New upstream release.
   * control: Bump build-depends on meson for rusticl.
+  * rules, control: Bump llvm to 18. (Closes: #1072901)
 
  -- Timo Aaltonen <tjaalton@debian.org>  Tue, 04 Jun 2024 13:57:58 +0300
 
