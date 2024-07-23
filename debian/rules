@@ -34,7 +34,7 @@ else
 endif
 
 EGL_PLATFORMS = x11
-GALLIUM_DRIVERS = swrast
+GALLIUM_DRIVERS = softpipe llvmpipe
 VULKAN_DRIVERS =
 VULKAN_LAYERS =
 
