@@ -337,7 +337,8 @@ static bool lower_resource_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin
    case nir_intrinsic_bindless_image_fragment_mask_load_amd:
    case nir_intrinsic_bindless_image_store:
    case nir_intrinsic_bindless_image_atomic:
-   case nir_intrinsic_bindless_image_atomic_swap: {
+   case nir_intrinsic_bindless_image_atomic_swap:
+   case nir_intrinsic_bindless_image_descriptor_amd: {
       assert(!(nir_intrinsic_access(intrin) & ACCESS_NON_UNIFORM));
 
       enum ac_descriptor_type desc_type;
@@ -347,6 +348,11 @@ static bool lower_resource_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin
          enum glsl_sampler_dim dim = nir_intrinsic_image_dim(intrin);
          desc_type = dim == GLSL_SAMPLER_DIM_BUF ? AC_DESC_BUFFER : AC_DESC_IMAGE;
       }
+
+      /* Check if the instruction already sources a descriptor and doesn't need to be lowered. */
+      if (intrin->src[0].ssa->num_components == (desc_type == AC_DESC_BUFFER ? 4 : 8) &&
+          intrin->src[0].ssa->bit_size == 32)
+         return false;
 
       bool is_load =
          intrin->intrinsic == nir_intrinsic_bindless_image_load ||

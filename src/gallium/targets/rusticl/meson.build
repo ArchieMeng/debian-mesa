@@ -42,6 +42,7 @@ librusticl = shared_library(
   ],
   link_whole : librusticl,
   link_with : [
+    libgalliumvl_stub,
     libpipe_loader_static,
     libswdri,
     libswkmsdri,
@@ -63,6 +64,7 @@ librusticl = shared_library(
   link_args : [
     ld_args_build_id,
     ld_args_gc_sections,
+    ld_args_bsymbolic,
     rusticl_ld_args,
   ],
   link_depends : rusticl_ld_depends,
@@ -84,5 +86,5 @@ configure_file(
 # .so is hardcoded in the icd as well
 devenv.prepend(
   'OCL_ICD_VENDORS',
-  meson.current_build_dir() / 'libRusticlOpenCL.so.@0@'.format(opencl_version)
+  meson.current_build_dir() / ''
 )

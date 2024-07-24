@@ -211,7 +211,6 @@ files_libgallium = files(
   'util/u_blend.h',
   'util/u_blitter.c',
   'util/u_blitter.h',
-  'util/u_box.h',
   'util/u_cache.c',
   'util/u_cache.h',
   'util/u_compute.c',
@@ -549,7 +548,7 @@ if with_tests
   )
 endif
 
-libgalliumvl_stub = static_library(
+_libgalliumvl_stub = static_library(
   'galliumvl_stub',
   'vl/vl_stubs.c',
   c_args : [c_msvc_compat_args],
@@ -570,6 +569,15 @@ libgalliumvl = static_library(
   dependencies : [idep_nir, idep_mesautil],
   build_by_default : false,
 )
+
+# some drivers export their screen creation function globally, so all frontends have to contain the
+# full libgalliumvl. So we'll handle this here globally for everybody.
+if (with_gallium_va or with_gallium_vdpau or with_gallium_omx != 'disabled' or
+   with_dri or with_gallium_radeonsi)
+  libgalliumvl_stub = libgalliumvl
+else
+  libgalliumvl_stub = _libgalliumvl_stub
+endif
 
 # XXX: The dependencies here may be off...
 libgalliumvlwinsys = static_library(

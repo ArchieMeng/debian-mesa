@@ -80,6 +80,12 @@ index_instrs(struct ir3_block *block, unsigned index)
    return index;
 }
 
+void
+ir3_index_instrs_for_merge_sets(struct ir3 *ir)
+{
+   index_instrs(ir3_start_block(ir), 0);
+}
+
 /* Definitions within a merge set are ordered by instr->ip as set above: */
 
 static bool
@@ -377,6 +383,8 @@ static void
 aggressive_coalesce_split(struct ir3_liveness *live,
                           struct ir3_instruction *split)
 {
+   if (!(split->dsts[0]->flags & IR3_REG_SSA))
+      return;
    try_merge_defs(live, split->srcs[0]->def, split->dsts[0],
                   split->split.off * reg_elem_size(split->dsts[0]));
 }
@@ -409,6 +417,10 @@ create_parallel_copy(struct ir3_block *block)
          if (phi->opc != OPC_META_PHI)
             break;
 
+         /* Avoid phis we've already colored */
+         if (!(phi->dsts[0]->flags & IR3_REG_SSA))
+            continue;
+
          /* Avoid undef */
          if ((phi->srcs[pred_idx]->flags & IR3_REG_SSA) &&
              !phi->srcs[pred_idx]->def)
@@ -430,6 +442,8 @@ create_parallel_copy(struct ir3_block *block)
       foreach_instr (phi, &succ->instr_list) {
          if (phi->opc != OPC_META_PHI)
             break;
+         if (!(phi->dsts[0]->flags & IR3_REG_SSA))
+            continue;
          if ((phi->srcs[pred_idx]->flags & IR3_REG_SSA) &&
              !phi->srcs[pred_idx]->def)
             continue;
@@ -456,6 +470,8 @@ create_parallel_copy(struct ir3_block *block)
       foreach_instr (phi, &succ->instr_list) {
          if (phi->opc != OPC_META_PHI)
             break;
+         if (!(phi->dsts[0]->flags & IR3_REG_SSA))
+            continue;
          if ((phi->srcs[pred_idx]->flags & IR3_REG_SSA) &&
              !phi->srcs[pred_idx]->def)
             continue;
@@ -544,8 +560,6 @@ dump_merge_sets(struct ir3 *ir)
 void
 ir3_merge_regs(struct ir3_liveness *live, struct ir3 *ir)
 {
-   index_instrs(ir3_start_block(ir), 0);
-
    /* First pass: coalesce phis, which must be together. */
    foreach_block (block, &ir->block_list) {
       foreach_instr (instr, &block->instr_list) {

@@ -542,7 +542,7 @@ vtn_string_literal(struct vtn_builder *b, const uint32_t *words,
    }
 #endif
 
-   const char *str = (char *)words;
+   const char *str = (const char *)words;
    const char *end = memchr(str, 0, word_count * 4);
    vtn_fail_if(end == NULL, "String is not null-terminated");
 
@@ -2278,31 +2278,38 @@ vtn_handle_constant(struct vtn_builder *b, SpvOp opcode,
          int elem = -1;
          const struct vtn_type *type = comp->type;
          for (unsigned i = deref_start; i < count; i++) {
-            vtn_fail_if(w[i] > type->length,
-                        "%uth index of %s is %u but the type has only "
-                        "%u elements", i - deref_start,
-                        spirv_op_to_string(opcode), w[i], type->length);
+            if (type->base_type == vtn_base_type_cooperative_matrix) {
+               /* Cooperative matrices are always scalar constants.  We don't
+                * care about the index w[i] because it's always replicated.
+                */
+               type = type->component_type;
+            } else {
+               vtn_fail_if(w[i] > type->length,
+                           "%uth index of %s is %u but the type has only "
+                           "%u elements", i - deref_start,
+                           spirv_op_to_string(opcode), w[i], type->length);
 
-            switch (type->base_type) {
-            case vtn_base_type_vector:
-               elem = w[i];
-               type = type->array_element;
-               break;
+               switch (type->base_type) {
+               case vtn_base_type_vector:
+                  elem = w[i];
+                  type = type->array_element;
+                  break;
 
-            case vtn_base_type_matrix:
-            case vtn_base_type_array:
-               c = &(*c)->elements[w[i]];
-               type = type->array_element;
-               break;
+               case vtn_base_type_matrix:
+               case vtn_base_type_array:
+                  c = &(*c)->elements[w[i]];
+                  type = type->array_element;
+                  break;
 
-            case vtn_base_type_struct:
-               c = &(*c)->elements[w[i]];
-               type = type->members[w[i]];
-               break;
+               case vtn_base_type_struct:
+                  c = &(*c)->elements[w[i]];
+                  type = type->members[w[i]];
+                  break;
 
-            default:
-               vtn_fail("%s must only index into composite types",
-                        spirv_op_to_string(opcode));
+               default:
+                  vtn_fail("%s must only index into composite types",
+                           spirv_op_to_string(opcode));
+               }
             }
          }
 
@@ -4469,6 +4476,8 @@ vtn_handle_barrier(struct vtn_builder *b, SpvOp opcode,
                                SpvMemorySemanticsSequentiallyConsistentMask);
          memory_semantics |= SpvMemorySemanticsAcquireReleaseMask |
                              SpvMemorySemanticsOutputMemoryMask;
+         if (memory_scope == SpvScopeSubgroup || memory_scope == SpvScopeInvocation)
+            memory_scope = SpvScopeWorkgroup;
       }
 
       vtn_emit_scoped_control_barrier(b, execution_scope, memory_scope,
@@ -4923,6 +4932,10 @@ vtn_handle_preamble_instruction(struct vtn_builder *b, SpvOp opcode,
          spv_check_supported(fragment_shader_pixel_interlock, cap);
          break;
 
+      case SpvCapabilityShaderSMBuiltinsNV:
+         spv_check_supported(shader_sm_builtins_nv, cap);
+         break;
+
       case SpvCapabilityDemoteToHelperInvocation:
          spv_check_supported(demote_to_helper_invocation, cap);
          b->uses_demote_to_helper_invocation = true;
@@ -5070,6 +5083,10 @@ vtn_handle_preamble_instruction(struct vtn_builder *b, SpvOp opcode,
 
       case SpvCapabilityCooperativeMatrixKHR:
          spv_check_supported(cooperative_matrix, cap);
+         break;
+
+      case SpvCapabilityQuadControlKHR:
+         spv_check_supported(quad_control, cap);
          break;
 
       default:
@@ -5517,6 +5534,10 @@ vtn_handle_execution_mode(struct vtn_builder *b, struct vtn_value *entry_point,
       break;
    }
 
+   case SpvExecutionModeMaximallyReconvergesKHR:
+      b->shader->info.maximally_reconverges = true;
+      break;
+
    case SpvExecutionModeLocalSizeId:
    case SpvExecutionModeLocalSizeHintId:
    case SpvExecutionModeSubgroupsPerWorkgroupId:
@@ -5577,6 +5598,16 @@ vtn_handle_execution_mode(struct vtn_builder *b, struct vtn_value *entry_point,
    case SpvExecutionModeStencilRefUnchangedBackAMD:
       vtn_assert(b->shader->info.stage == MESA_SHADER_FRAGMENT);
       b->shader->info.fs.stencil_back_layout = FRAG_STENCIL_LAYOUT_UNCHANGED;
+      break;
+
+   case SpvExecutionModeRequireFullQuadsKHR:
+      vtn_assert(b->shader->info.stage == MESA_SHADER_FRAGMENT);
+      b->shader->info.fs.require_full_quads = true;
+      break;
+
+   case SpvExecutionModeQuadDerivativesKHR:
+      vtn_assert(b->shader->info.stage == MESA_SHADER_FRAGMENT);
+      b->shader->info.fs.quad_derivatives = true;
       break;
 
    case SpvExecutionModeCoalescingAMDX:
@@ -6525,6 +6556,8 @@ vtn_handle_body_instruction(struct vtn_builder *b, SpvOp opcode,
    case SpvOpGroupNonUniformLogicalXor:
    case SpvOpGroupNonUniformQuadBroadcast:
    case SpvOpGroupNonUniformQuadSwap:
+   case SpvOpGroupNonUniformQuadAllKHR:
+   case SpvOpGroupNonUniformQuadAnyKHR:
    case SpvOpGroupAll:
    case SpvOpGroupAny:
    case SpvOpGroupBroadcast:

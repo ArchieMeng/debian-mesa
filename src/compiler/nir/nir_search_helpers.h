@@ -355,12 +355,30 @@ is_16_bits(UNUSED struct hash_table *ht, const nir_alu_instr *instr,
    if (!nir_src_is_const(instr->src[src].src))
       return false;
 
+   /* All elements must be representable as int16_t or uint16_t. */
+   bool must_be_signed = false;
+   bool must_be_unsigned = false;
+
    for (unsigned i = 0; i < num_components; i++) {
       const int64_t val =
          nir_src_comp_as_int(instr->src[src].src, swizzle[i]);
 
       if (val > 0xffff || val < -0x8000)
          return false;
+
+      if (val < 0) {
+         if (must_be_unsigned)
+            return false;
+
+         must_be_signed = true;
+      }
+
+      if (val > 0x7fff) {
+         if (must_be_signed)
+            return false;
+
+         must_be_unsigned = true;
+      }
    }
 
    return true;
@@ -447,6 +465,12 @@ static inline bool
 is_not_used_by_if(const nir_alu_instr *instr)
 {
    return !is_used_by_if(instr);
+}
+
+static inline bool
+is_only_used_by_if(const nir_alu_instr *instr)
+{
+   return nir_def_only_used_by_if(&instr->def);
 }
 
 static inline bool

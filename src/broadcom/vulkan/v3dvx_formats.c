@@ -26,9 +26,9 @@
 #include "broadcom/cle/v3dx_pack.h"
 
 #include "util/format/u_format.h"
-#include "vulkan/util/vk_util.h"
 #include "vk_enum_to_str.h"
 #include "vk_enum_defines.h"
+#include "vk_util.h"
 
 #define SWIZ(x,y,z,w) {   \
    PIPE_SWIZZLE_##x,      \
@@ -266,7 +266,10 @@ v3dX(get_format)(VkFormat format)
 
    switch (ext_number) {
    case _VK_EXT_4444_formats_number:
-      return &format_table_4444[enum_offset];
+      if (enum_offset < ARRAY_SIZE(format_table_4444))
+         return &format_table_4444[enum_offset];
+      else
+         return NULL;
    case _VK_KHR_sampler_ycbcr_conversion_number:
       if (enum_offset < ARRAY_SIZE(format_table_ycbcr))
          return &format_table_ycbcr[enum_offset];
