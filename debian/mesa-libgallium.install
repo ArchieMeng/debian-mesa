@@ -1,1 +1,1 @@
-usr/lib/*/dri/libgallium.so
+usr/lib/*/libgallium-*.so
