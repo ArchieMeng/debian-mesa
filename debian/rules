@@ -208,6 +208,8 @@ override_dh_clean: regen_control
 	rm -rf configure bin/config.guess bin/config.sub config.h.in
 	rm -rf $$(find -name Makefile.in)
 	rm -rf bin/install-sh bin/ltmain.sh
+	rm -rf src/intel/vulkan/grl/parser.out
+	rm -rf src/intel/vulkan/grl/parsetab.py
 	for file in debian/*.links.in; do rm -f $${file%%.in}; done
 	find -name '*.pyc' -delete
 	find -name '__pycache__' -delete
