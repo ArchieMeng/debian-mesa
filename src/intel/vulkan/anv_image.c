@@ -252,6 +252,9 @@ anv_image_choose_isl_surf_usage(struct anv_physical_device *device,
                           VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT))
       isl_usage |= ISL_SURF_USAGE_2D_3D_COMPATIBLE_BIT;
 
+   if (vk_create_flags & VK_IMAGE_CREATE_PROTECTED_BIT)
+      isl_usage |= ISL_SURF_USAGE_PROTECTED_BIT;
+
    /* Even if we're only using it for transfer operations, clears to depth and
     * stencil images happen as depth and stencil so they need the right ISL
     * usage bits or else things will fall apart.
@@ -1581,6 +1584,19 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
 
       if (isl_drm_modifier_needs_display_layout(image->vk.drm_format_mod))
          isl_extra_usage_flags |= ISL_SURF_USAGE_DISPLAY_BIT;
+
+      if (device->info->ver >= 20 &&
+          !isl_drm_modifier_has_aux(image->vk.drm_format_mod)) {
+         /* TODO: On Xe2+, we cannot support modifiers that don't support
+          * compression because such support requires an explicit resolve
+          * that hasn't been implemented.
+          *
+          * We disable this in anv_AllocateMemory() as well.
+          *
+          * https://gitlab.freedesktop.org/mesa/mesa/-/issues/11537
+          */
+         isl_extra_usage_flags |= ISL_SURF_USAGE_DISABLE_AUX_BIT;
+      }
    }
 
    for (int i = 0; i < ANV_IMAGE_MEMORY_BINDING_END; ++i) {
@@ -2552,8 +2568,8 @@ anv_bind_image_memory(struct anv_device *device,
       if (device->info->has_aux_map && anv_image_map_aux_tt(device, image, p))
          continue;
 
-      /* Do nothing prior to gfx12. There are no special requirements. */
-      if (device->info->ver < 12)
+      /* Do nothing except for gfx12. There are no special requirements. */
+      if (device->info->ver != 12)
          continue;
 
       /* The plane's BO cannot support CCS, disable compression on it. */
@@ -3297,6 +3313,9 @@ anv_image_fill_surface_state(struct anv_device *device,
 
    struct isl_view view = *view_in;
    view.usage |= view_usage;
+
+   /* Propagate the protection flag of the image to the view. */
+   view_usage |= surface->isl.usage & ISL_SURF_USAGE_PROTECTED_BIT;
 
    if (view_usage == ISL_SURF_USAGE_RENDER_TARGET_BIT)
       view.swizzle = anv_swizzle_for_render(view.swizzle);

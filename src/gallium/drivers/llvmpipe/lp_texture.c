@@ -1290,21 +1290,27 @@ llvmpipe_memory_barrier(struct pipe_context *pipe,
 static struct pipe_memory_allocation *
 llvmpipe_allocate_memory(struct pipe_screen *_screen, uint64_t size)
 {
-   struct llvmpipe_screen *screen = llvmpipe_screen(_screen);
    struct llvmpipe_memory_allocation *mem = CALLOC_STRUCT(llvmpipe_memory_allocation);
    uint64_t alignment;
    if (!os_get_page_size(&alignment))
       alignment = 256;
 
-   mem->fd = screen->fd_mem_alloc;
    mem->size = align64(size, alignment);
 
 #if DETECT_OS_LINUX
+   struct llvmpipe_screen *screen = llvmpipe_screen(_screen);
+
    mem->cpu_addr = MAP_FAILED;
+   mem->fd = screen->fd_mem_alloc;
 
    mtx_lock(&screen->mem_mutex);
 
    mem->offset = util_vma_heap_alloc(&screen->mem_heap, mem->size, alignment);
+   if (!mem->offset) {
+      mtx_unlock(&screen->mem_mutex);
+      FREE(mem);
+      return NULL;
+   }
 
    if (mem->offset + mem->size > screen->mem_file_size) {
       /* expand the anonymous file */
@@ -1325,8 +1331,10 @@ static void
 llvmpipe_free_memory(struct pipe_screen *pscreen,
                      struct pipe_memory_allocation *pmem)
 {
-   struct llvmpipe_screen *screen = llvmpipe_screen(pscreen);
    struct llvmpipe_memory_allocation *mem = (struct llvmpipe_memory_allocation *)pmem;
+
+#if DETECT_OS_LINUX
+   struct llvmpipe_screen *screen = llvmpipe_screen(pscreen);
 
    if (mem->fd) {
       mtx_lock(&screen->mem_mutex);
@@ -1334,7 +1342,6 @@ llvmpipe_free_memory(struct pipe_screen *pscreen,
       mtx_unlock(&screen->mem_mutex);
    }
 
-#if DETECT_OS_LINUX
    if (mem->cpu_addr != MAP_FAILED)
       munmap(mem->cpu_addr, mem->size);
 #else

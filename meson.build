@@ -126,31 +126,31 @@ if gallium_drivers.contains('auto')
     # TODO: Sparc
     if ['x86', 'x86_64'].contains(host_machine.cpu_family())
       gallium_drivers = [
-        'r300', 'r600', 'radeonsi', 'nouveau', 'virgl', 'svga', 'swrast',
+        'r300', 'r600', 'radeonsi', 'nouveau', 'virgl', 'svga', 'llvmpipe', 'softpipe',
         'iris', 'crocus', 'i915', 'zink'
       ]
     elif ['arm', 'aarch64'].contains(host_machine.cpu_family())
       gallium_drivers = [
         'v3d', 'vc4', 'freedreno', 'etnaviv', 'nouveau', 'svga',
-        'tegra', 'virgl', 'lima', 'panfrost', 'swrast', 'iris',
+        'tegra', 'virgl', 'lima', 'panfrost', 'llvmpipe', 'softpipe', 'iris',
         'zink'
       ]
     elif ['mips', 'mips64', 'ppc', 'ppc64', 'riscv32', 'riscv64'].contains(host_machine.cpu_family())
       gallium_drivers = [
-        'r300', 'r600', 'radeonsi', 'nouveau', 'virgl', 'swrast', 'zink'
+        'r300', 'r600', 'radeonsi', 'nouveau', 'virgl', 'llvmpipe', 'softpipe', 'zink'
       ]
     elif ['loongarch64'].contains(host_machine.cpu_family())
       gallium_drivers = [
-        'r300', 'r600', 'radeonsi', 'nouveau', 'virgl', 'etnaviv', 'swrast', 'zink'
+        'r300', 'r600', 'radeonsi', 'nouveau', 'virgl', 'etnaviv', 'llvmpipe', 'softpipe', 'zink'
       ]
     else
       error('Unknown architecture @0@. Please pass -Dgallium-drivers to set driver options. Patches gladly accepted to fix this.'.format(
             host_machine.cpu_family()))
     endif
   elif ['windows'].contains(host_machine.system())
-    gallium_drivers = ['swrast', 'zink', 'd3d12']
+    gallium_drivers = ['llvmpipe', 'softpipe', 'zink', 'd3d12']
   elif ['darwin', 'cygwin', 'haiku'].contains(host_machine.system())
-    gallium_drivers = ['swrast']
+    gallium_drivers = ['llvmpipe', 'softpipe']
   else
     error('Unknown OS @0@. Please pass -Dgallium-drivers to set driver options. Patches gladly accepted to fix this.'.format(
           host_machine.system()))
@@ -160,7 +160,7 @@ elif gallium_drivers.contains('all')
    # is not available on non-Intel distros.
    gallium_drivers = [
      'r300', 'r600', 'radeonsi', 'crocus', 'v3d', 'vc4', 'freedreno', 'etnaviv',
-     'nouveau', 'svga', 'tegra', 'virgl', 'lima', 'panfrost', 'swrast', 'iris',
+     'nouveau', 'svga', 'tegra', 'virgl', 'lima', 'panfrost', 'llvmpipe', 'softpipe', 'iris',
      'zink', 'd3d12', 'asahi'
    ]
 endif
@@ -1835,9 +1835,9 @@ if with_llvm
 elif with_amd_vk and with_aco_tests
   error('ACO tests require LLVM, but LLVM is disabled.')
 elif with_swrast_vk
-  error('The following drivers require LLVM: Lavapipe. One of these is enabled, but LLVM is disabled.')
+  error('lavapipe requires LLVM and is enabled, but LLVM is disabled.')
 elif with_gallium_llvmpipe
-  error('The following drivers require LLVM: llvmpipe. It is enabled, but LLVM is disabled.')
+  error('llvmpipe requires LLVM and is enabled, but LLVM is disabled.')
 elif with_gallium_clover
   error('The OpenCL "Clover" state tracker requires LLVM, but LLVM is disabled.')
 elif with_clc
@@ -2290,12 +2290,6 @@ endif
 # This quirk needs to be applied to sources with functions defined in assembly
 # as GCC LTO drops them. See: https://bugs.freedesktop.org/show_bug.cgi?id=109391
 gcc_lto_quirk = (cc.get_id() == 'gcc') ? ['-fno-lto'] : []
-
-# As of GCC 13.2.1, Venus build with optimization level plain/0 and LTO does not
-# compile properly: https://gitlab.freedesktop.org/mesa/mesa/-/issues/11006
-if with_virtio_vk and cc.get_id() == 'gcc' and (get_option('optimization') == '0' or get_option('optimization') == 'plain') and get_option('b_lto') == true
-  error('Venus does not compile properly with GCC + optimization level plain/0 + LTO.')
-endif
 
 devenv = environment()
 
