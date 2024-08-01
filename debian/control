@@ -11,7 +11,7 @@ Build-Depends:
  glslang-tools [amd64 arm64 armel armhf i386 loong64 powerpc ppc64 ppc64el riscv64 s390x sparc64 x32],
  meson (>= 1.4.0),
  quilt (>= 0.63-8.2~),
- pkg-config,
+ pkgconf,
  libdrm-dev (>= 2.4.119),
  libx11-dev,
  libxxf86vm-dev,
