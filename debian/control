@@ -439,7 +439,7 @@ Depends:
  ${misc:Depends},
 Multi-Arch: same
 Description: DRM shim libraries
- This package provides drm-shim libraries which can be used for testing DRM drivers when
- none exists on the host
+ This package provides drm-shim libraries which can be used for testing DRM
+ drivers when none exists on the host.
 
 # vim: tw=0
