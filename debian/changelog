@@ -1,11 +1,18 @@
-mesa (24.2.0~rc3-1) UNRELEASED; urgency=medium
+mesa (24.2.0~rc3-1) unstable; urgency=medium
 
+  [ Timo Aaltonen ]
   * New upstream release candidate.
   * control: Migrate to pkgconf.
   * Add some lintian-overrides.
   * control: Fix drm-shim description.
 
- -- Timo Aaltonen <tjaalton@debian.org>  Thu, 01 Aug 2024 13:55:18 +0300
+  [ Simon McVittie ]
+  * d/rules: Replace deprecated swrast with softpipe and llvmpipe
+  * d/rules: Replace deprecated glvnd=true with glvnd=enabled
+  * libglx-mesa0.symbols: Update for new symbols
+  * Add a new private shared library package for libgallium.so
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Thu, 01 Aug 2024 14:16:38 +0300
 
 mesa (24.1.5-1) unstable; urgency=medium
 
