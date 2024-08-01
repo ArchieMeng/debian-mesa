@@ -4,6 +4,7 @@ mesa (24.1.5-1) UNRELEASED; urgency=medium
   * control, rules: Enable NVK, bump rustc build-dependency. (Closes:
     #1075858)
   * control: Add rustfmt to build-depends.
+  * rules: Update clean target.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Mon, 08 Jul 2024 17:00:01 +0300
 
