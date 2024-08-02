@@ -253,8 +253,10 @@ override_dh_install:
 	rm debian/tmp/usr/lib/*/libglapi.so
 	rm debian/tmp/usr/lib/*/libEGL_mesa.so
 	rm debian/tmp/usr/lib/*/libGLX_mesa.so
+  ifneq (,$(filter $(DEB_HOST_ARCH), $(RUSTICL_ARCHS)))
 	rm debian/tmp/usr/bin/mme_fermi_sim_hw_test
 	rm debian/tmp/usr/bin/mme_tu104_sim_hw_test
+  endif
 	# use -f here though
 	rm -f debian/tmp/usr/lib/*/libgrl.a
 
