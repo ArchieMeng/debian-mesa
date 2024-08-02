@@ -5,6 +5,7 @@ mesa (24.2.0~rc3-1) UNRELEASED; urgency=medium
   * control: Migrate to pkgconf.
   * Add some lintian-overrides.
   * control: Fix drm-shim description.
+  * control, rules: Bump llvm to 18. (Closes: #1072901)
 
   [ Simon McVittie ]
   * d/rules: Replace deprecated swrast with softpipe and llvmpipe
