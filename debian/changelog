@@ -6,6 +6,8 @@ mesa (24.1.5-2) UNRELEASED; urgency=medium
   [ Timo Aaltonen ]
   * rules: Fix FTBFS by only cleaning some nvk test binaries if they
     actually get built.
+  * rules: Add a new NVK_ARCHS which is a subset of RUSTICL_ARCHS, strip
+    powerpc, ppc64el and s390x from it.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Fri, 02 Aug 2024 09:54:58 +0300
 
