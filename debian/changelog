@@ -1,10 +1,10 @@
-mesa (24.1.5-3) UNRELEASED; urgency=medium
+mesa (24.1.5-3) unstable; urgency=medium
 
   * control: Mark NVK build-deps accordingly.
   * rules: Drop --wrap-mode=default, leftover from previous testing.
     (Closes: #1077729)
 
- -- Timo Aaltonen <tjaalton@debian.org>  Fri, 02 Aug 2024 14:11:48 +0300
+ -- Timo Aaltonen <tjaalton@debian.org>  Fri, 02 Aug 2024 17:45:45 +0300
 
 mesa (24.1.5-2) unstable; urgency=medium
 
