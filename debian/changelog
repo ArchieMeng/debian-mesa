@@ -1,3 +1,9 @@
+mesa (24.1.5-3) UNRELEASED; urgency=medium
+
+  * control: Mark NVK build-deps accordingly.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Fri, 02 Aug 2024 14:11:48 +0300
+
 mesa (24.1.5-2) unstable; urgency=medium
 
   [ Adrian Bunk ]
