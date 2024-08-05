@@ -1,3 +1,9 @@
+mesa (24.2.0~rc3-3) UNRELEASED; urgency=medium
+
+  * control: Add python3-yaml to build-depends.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Mon, 05 Aug 2024 15:48:21 +0300
+
 mesa (24.2.0~rc3-2) experimental; urgency=medium
 
   * Add ldconfig trigger for mesa-drm-shim.
