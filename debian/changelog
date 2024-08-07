@@ -1,5 +1,6 @@
-mesa (24.2.0~rc3-3) UNRELEASED; urgency=medium
+mesa (24.2.0~rc4-1) UNRELEASED; urgency=medium
 
+  * New upstream release candidate.
   * control: Add python3-yaml to build-depends.
   * control: Move libclc-NN dependency to LLVM_ARCHS.
 
