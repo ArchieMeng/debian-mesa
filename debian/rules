@@ -35,7 +35,7 @@ else
 endif
 
 EGL_PLATFORMS = x11
-GALLIUM_DRIVERS = softpipe llvmpipe
+GALLIUM_DRIVERS = softpipe
 VULKAN_DRIVERS =
 VULKAN_LAYERS =
 
@@ -107,7 +107,7 @@ else
   # LLVM is required for building r300g, radeonsi and llvmpipe drivers.
   # It's also required for building OpenCL support.
   ifneq (,$(filter $(DEB_HOST_ARCH), $(LLVM_ARCHS)))
-	GALLIUM_DRIVERS += radeonsi zink
+	GALLIUM_DRIVERS += radeonsi zink llvmpipe
 
 	# Only enable amd on riscv64, swrast needs CPU JIT support which doesn't work properly yet
 	ifneq (,$(filter $(DEB_HOST_ARCH), riscv64))
