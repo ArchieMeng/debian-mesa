@@ -1,3 +1,9 @@
+mesa (24.1.6-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Wed, 14 Aug 2024 22:00:52 +0300
+
 mesa (24.1.5-3) unstable; urgency=medium
 
   * control: Mark NVK build-deps accordingly.
