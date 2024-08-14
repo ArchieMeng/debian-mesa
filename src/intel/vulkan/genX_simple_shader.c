@@ -109,7 +109,8 @@ genX(emit_simpler_shader_init_fragment)(struct anv_simple_shader *state)
 
    genX(emit_l3_config)(batch, device, state->l3_config);
 
-   state->cmd_buffer->state.current_l3_config = state->l3_config;
+   if (state->cmd_buffer)
+      state->cmd_buffer->state.current_l3_config = state->l3_config;
 
    enum intel_urb_deref_block_size deref_block_size;
    genX(emit_urb_setup)(device, batch, state->l3_config,
@@ -690,6 +691,7 @@ genX(emit_simple_shader_dispatch)(struct anv_simple_shader *state,
          ggw.RightExecutionMask           = dispatch.right_mask;
          ggw.BottomExecutionMask          = 0xffffffff;
       }
+      anv_batch_emit(batch, GENX(MEDIA_STATE_FLUSH), msf);
 #endif
    }
 }

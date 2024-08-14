@@ -58,6 +58,10 @@ static const struct debug_control debug_control[] = {
    { NULL, },
 };
 
+static bool present_false(VkPhysicalDevice pdevice, int fd) {
+   return false;
+}
+
 VkResult
 wsi_device_init(struct wsi_device *wsi,
                 VkPhysicalDevice pdevice,
@@ -269,6 +273,21 @@ wsi_device_init(struct wsi_device *wsi,
             driQueryOptionb(dri_options, "vk_wsi_force_swapchain_to_current_extent");
       }
    }
+
+   /* can_present_on_device is a function pointer used to determine if images
+    * can be presented directly on a given device file descriptor (fd).
+    * If HAVE_LIBDRM is defined, it will be initialized to a platform-specific
+    * function (wsi_device_matches_drm_fd). Otherwise, it is initialized to
+    * present_false to ensure that it always returns false, preventing potential
+    * segmentation faults from unchecked calls.
+    * Drivers for non-PCI based GPUs are expected to override this after calling
+    * wsi_device_init().
+    */
+#ifdef HAVE_LIBDRM
+   wsi->can_present_on_device = wsi_device_matches_drm_fd;
+#else
+   wsi->can_present_on_device = present_false;
+#endif
 
    return VK_SUCCESS;
 fail:
@@ -1380,9 +1399,14 @@ wsi_common_queue_present(const struct wsi_device *wsi,
       uint32_t image_index = pPresentInfo->pImageIndices[i];
       VkResult result;
 
-      /* Update the present mode for this present and any subsequent present. */
-      if (present_mode_info && present_mode_info->pPresentModes && swapchain->set_present_mode)
+      /* Update the present mode for this present and any subsequent present.
+       * Only update the present mode when MESA_VK_WSI_PRESENT_MODE is not used.
+       * We should also turn any VkSwapchainPresentModesCreateInfoEXT into a nop,
+       * but none of the WSI backends use that currently. */
+      if (present_mode_info && present_mode_info->pPresentModes &&
+          swapchain->set_present_mode && wsi->override_present_mode == VK_PRESENT_MODE_MAX_ENUM_KHR) {
          swapchain->set_present_mode(swapchain, present_mode_info->pPresentModes[i]);
+      }
 
       if (swapchain->fences[image_index] == VK_NULL_HANDLE) {
          const VkFenceCreateInfo fence_info = {
