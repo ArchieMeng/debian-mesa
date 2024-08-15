@@ -1,4 +1,4 @@
-mesa (24.2.0-2) UNRELEASED; urgency=medium
+mesa (24.2.0-2) experimental; urgency=medium
 
   * control, rules: Drop armel, mips64el, loong64 from NVK_ARCHS (FTBFS).
   * rules: ORCJIT is enabled by default now, so don't force draw-use-
@@ -9,7 +9,7 @@ mesa (24.2.0-2) UNRELEASED; urgency=medium
     it's an obsolete arch, and for sh4 limit it to just setting a single
     flag.
 
- -- Timo Aaltonen <tjaalton@debian.org>  Thu, 15 Aug 2024 08:26:26 +0300
+ -- Timo Aaltonen <tjaalton@debian.org>  Thu, 15 Aug 2024 09:14:51 +0300
 
 mesa (24.2.0-1) experimental; urgency=medium
 
