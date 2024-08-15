@@ -1,3 +1,9 @@
+mesa (24.2.0-2) UNRELEASED; urgency=medium
+
+  * control, rules: Drop armel, mips64el, loong64 from NVK_ARCHS (FTBFS).
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Thu, 15 Aug 2024 08:26:26 +0300
+
 mesa (24.2.0-1) experimental; urgency=medium
 
   * New upstream release.
