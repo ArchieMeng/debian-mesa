@@ -5,6 +5,9 @@ mesa (24.2.0-2) UNRELEASED; urgency=medium
     llvm=false on riscv64.
   * rules: Fix m68k build, and rework setting buildflags. (Closes:
     #1067207)
+  * rules: Really drop ppc64el from optimization workaround, drop sh3 as
+    it's an obsolete arch, and for sh4 limit it to just setting a single
+    flag.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Thu, 15 Aug 2024 08:26:26 +0300
 

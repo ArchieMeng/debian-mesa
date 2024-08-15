@@ -29,10 +29,10 @@ else ifneq (,$(filter $(DEB_HOST_ARCH), m68k))
   # This library has huge jump tables: Debian #1067207
   DEB_CFLAGS_MAINT_APPEND += -mlong-jump-table-offsets
   DEB_CXXFLAGS_MAINT_APPEND += -mlong-jump-table-offsets
-else ifneq (,$(filter $(DEB_HOST_ARCH), ppc64el sh3 sh4))
+else ifneq (,$(filter $(DEB_HOST_ARCH), sh4))
   # Workaround for https://gcc.gnu.org/bugzilla/show_bug.cgi?id=83143
-  DEB_CFLAGS_MAINT_APPEND += -O1
-  DEB_CXXFLAGS_MAINT_APPEND += -O1
+  DEB_CFLAGS_MAINT_APPEND += -freorder-blocks-algorithm=simple
+  DEB_CXXFLAGS_MAINT_APPEND += -freorder-blocks-algorithm=simple
 endif
 buildflags = $(shell \
 	DEB_CFLAGS_MAINT_APPEND='$(DEB_CFLAGS_MAINT_APPEND)' \
