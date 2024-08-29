@@ -1,4 +1,4 @@
-mesa (24.2.1-1) unstable; urgency=medium
+mesa (24.2.1-2) unstable; urgency=medium
 
   [ WANG Xuerui ]
   * rules: disable TLSDESC for loong64 for now
