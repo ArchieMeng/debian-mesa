@@ -9,6 +9,7 @@ mesa (24.2.1-1) UNRELEASED; urgency=medium
   [ Timo Aaltonen ]
   * Add upstream metadata, drop old git url from d/watch.
   * New upstream release.
+  * control: Bump librust-syn-dev build-dep.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Thu, 29 Aug 2024 09:04:02 +0300
 
