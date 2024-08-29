@@ -1,3 +1,16 @@
+mesa (24.2.0-3) UNRELEASED; urgency=medium
+
+  [ WANG Xuerui ]
+  * rules: disable TLSDESC for loong64 for now
+
+  [ Fabio Pedretti ]
+  * removed unused lua5.4 dependency
+
+  [ Timo Aaltonen ]
+  * Add upstream metadata, drop old git url from d/watch.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Thu, 29 Aug 2024 09:04:02 +0300
+
 mesa (24.2.0-2) experimental; urgency=medium
 
   * control, rules: Drop armel, mips64el, loong64 from NVK_ARCHS (FTBFS).
