@@ -1,4 +1,4 @@
-mesa (24.2.1-1) UNRELEASED; urgency=medium
+mesa (24.2.1-1) unstable; urgency=medium
 
   [ WANG Xuerui ]
   * rules: disable TLSDESC for loong64 for now
@@ -11,7 +11,7 @@ mesa (24.2.1-1) UNRELEASED; urgency=medium
   * New upstream release.
   * control: Bump librust-syn-dev build-dep.
 
- -- Timo Aaltonen <tjaalton@debian.org>  Thu, 29 Aug 2024 09:04:02 +0300
+ -- Timo Aaltonen <tjaalton@debian.org>  Thu, 29 Aug 2024 09:42:42 +0300
 
 mesa (24.2.0-2) experimental; urgency=medium
 
