@@ -1,4 +1,4 @@
-mesa (24.2.0-3) UNRELEASED; urgency=medium
+mesa (24.2.1-1) UNRELEASED; urgency=medium
 
   [ WANG Xuerui ]
   * rules: disable TLSDESC for loong64 for now
@@ -8,6 +8,7 @@ mesa (24.2.0-3) UNRELEASED; urgency=medium
 
   [ Timo Aaltonen ]
   * Add upstream metadata, drop old git url from d/watch.
+  * New upstream release.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Thu, 29 Aug 2024 09:04:02 +0300
 
