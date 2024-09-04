@@ -147,6 +147,16 @@ can_fast_clear_color(struct iris_context *ice,
          return false;
    }
 
+   /* On gfx12.0, CCS fast clears don't seem to cover the correct portion of
+    * the aux buffer when the pitch is not 512B-aligned.
+    */
+   if (devinfo->verx10 == 120 &&
+       res->surf.samples == 1 &&
+       res->surf.row_pitch_B % 512) {
+      perf_debug(&ice->dbg, "Pitch not 512B-aligned. Slow clearing surface.");
+      return false;
+   }
+
    return true;
 }
 
@@ -262,10 +272,19 @@ fast_clear_color(struct iris_context *ice,
     * contents of the previous draw hit the render target before we resolve
     * and again afterwards to ensure that the resolve is complete before we
     * do any more regular drawing.
+    *
+    * On Xe2+:
+    * From Bspec 57340 (r59562):
+    *
+    *   Synchronization:
+    *      Due to interaction of scaled clearing rectangle with pixel
+    *      scoreboard, we require one of the following commands to be issued.
+    *
+    * Requiring tile cache flush bit has been dropped since Xe2.
     */
    iris_emit_end_of_pipe_sync(batch, "fast clear: pre-flush",
       PIPE_CONTROL_RENDER_TARGET_FLUSH |
-      PIPE_CONTROL_TILE_CACHE_FLUSH |
+      (devinfo->verx10 < 200 ? PIPE_CONTROL_TILE_CACHE_FLUSH : 0) |
       (devinfo->verx10 == 120 ? PIPE_CONTROL_DEPTH_STALL : 0) |
       (devinfo->verx10 == 125 ? PIPE_CONTROL_FLUSH_HDC |
                                 PIPE_CONTROL_DATA_CACHE_FLUSH : 0) |
@@ -360,7 +379,9 @@ fast_clear_color(struct iris_context *ice,
    iris_batch_sync_region_end(batch);
 
    iris_resource_set_aux_state(ice, res, level, box->z,
-                               box->depth, ISL_AUX_STATE_CLEAR);
+                               box->depth, devinfo->ver < 20 ?
+                               ISL_AUX_STATE_CLEAR :
+                               ISL_AUX_STATE_COMPRESSED_NO_CLEAR);
    ice->state.dirty |= IRIS_DIRTY_RENDER_BUFFER;
    ice->state.stage_dirty |= IRIS_ALL_STAGE_DIRTY_BINDINGS;
    return;
@@ -531,6 +552,22 @@ fast_clear_depth(struct iris_context *ice,
       const union isl_color_value clear_value = { .f32 = {depth, } };
       iris_resource_set_clear_color(ice, res, clear_value);
       update_clear_depth = true;
+
+      if (res->aux.clear_color_bo) {
+         /* From the TGL PRMs, Volume 9: Render Engine, State Caching :
+          *
+          *    "Any values referenced by pointers within the
+          *    RENDER_SURFACE_STATE or SAMPLER_STATE (e.g. Clear Color
+          *    Pointer, Border Color or Indirect State Pointer) are considered
+          *    to be part of that state and any changes to these referenced
+          *    values requires an invalidation of the L1 state cache to ensure
+          *    the new values are being used as part of the state."
+          *
+          * Invalidate the state cache as suggested.
+          */
+         iris_emit_pipe_control_flush(batch, "flush fast clear values (z)",
+                                      PIPE_CONTROL_STATE_CACHE_INVALIDATE);
+      }
    }
 
    if (res->aux.usage == ISL_AUX_USAGE_HIZ_CCS_WT) {

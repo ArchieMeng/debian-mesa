@@ -84,6 +84,7 @@ VARS=(
     MESA_IMAGE_PATH
     MESA_IMAGE_TAG
     MESA_LOADER_DRIVER_OVERRIDE
+    MESA_SPIRV_LOG_LEVEL
     MESA_TEMPLATES_COMMIT
     MESA_VK_ABORT_ON_DEVICE_LOSS
     MESA_VK_IGNORE_CONFORMANCE_WARNING
@@ -117,17 +118,19 @@ VARS=(
     TU_DEBUG
     USE_ANGLE
     VIRGL_HOST_API
+    VIRGL_RENDER_SERVER
     WAFFLE_PLATFORM
-    VK_CPU
     VK_DRIVER
-    # required by virglrender CI
-    VK_DRIVER_FILES
     VKD3D_PROTON_RESULTS
     VKD3D_CONFIG
     VKD3D_TEST_EXCLUDE
     ZINK_DESCRIPTORS
     ZINK_DEBUG
     LVP_POISON_MEMORY
+
+    # Dead code within Mesa CI, but required by virglrender CI
+    # (because they include our files in their CI)
+    VK_DRIVER_FILES
 )
 
 for var in "${VARS[@]}"; do

@@ -173,8 +173,8 @@ option. For example:
    meson --prefix="${PWD}/build/install" build/
 
 will put the final libraries and drivers into the build/install/
-directory. Then you can set LD_LIBRARY_PATH and LIBGL_DRIVERS_PATH to
-that location to run/test the driver.
+directory. Then you can set LD_LIBRARY_PATH to that location to run/test
+the driver.
 
 Meson also honors ``DESTDIR`` for installs.
 
@@ -415,7 +415,7 @@ of those, as they'll have the right values for your system:
    cpp = '/usr/bin/g++'
    ar = '/usr/bin/gcc-ar'
    strip = '/usr/bin/strip'
-   pkgconfig = '/usr/bin/pkg-config-32'
+   pkg-config = '/usr/bin/pkg-config-32'
    llvm-config = '/usr/bin/llvm-config32'
 
    [properties]
@@ -439,7 +439,7 @@ of those, as they'll have the right values for your system:
    cpp = '/usr/bin/aarch64-linux-gnu-g++'
    ar = '/usr/bin/aarch64-linux-gnu-gcc-ar'
    strip = '/usr/bin/aarch64-linux-gnu-strip'
-   pkgconfig = '/usr/bin/aarch64-linux-gnu-pkg-config'
+   pkg-config = '/usr/bin/aarch64-linux-gnu-pkg-config'
    exe_wrapper = '/usr/bin/qemu-aarch64-static'
 
    [host_machine]
@@ -457,7 +457,7 @@ of those, as they'll have the right values for your system:
    cpp = '/usr/bin/x86_64-w64-mingw32-g++'
    ar = '/usr/bin/x86_64-w64-mingw32-ar'
    strip = '/usr/bin/x86_64-w64-mingw32-strip'
-   pkgconfig = '/usr/bin/x86_64-w64-mingw32-pkg-config'
+   pkg-config = '/usr/bin/x86_64-w64-mingw32-pkg-config'
    exe_wrapper = 'wine'
 
    [host_machine]

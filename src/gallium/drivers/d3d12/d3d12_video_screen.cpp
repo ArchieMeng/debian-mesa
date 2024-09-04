@@ -752,8 +752,8 @@ static d3d12_video_encode_get_h264_codec_support(const D3D12_VIDEO_ENCODER_PROFI
    capCodecConfigData.CodecSupportLimits.pH264Support = &supportedCaps;
    capCodecConfigData.CodecSupportLimits.DataSize = sizeof(supportedCaps);
 
-   if(FAILED(pD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT, &capCodecConfigData, sizeof(capCodecConfigData))
-      || !capCodecConfigData.IsSupported))
+   if(FAILED(pD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT, &capCodecConfigData, sizeof(capCodecConfigData)))
+      || !capCodecConfigData.IsSupported)
    {
          debug_printf("D3D12_FEATURE_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT call failed.");
          return false;
@@ -873,6 +873,7 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
    switch (profile) {
 #if VIDEO_CODEC_H264ENC
       case PIPE_VIDEO_PROFILE_MPEG4_AVC_CONSTRAINED_BASELINE:
+      case PIPE_VIDEO_PROFILE_MPEG4_AVC_BASELINE:
       case PIPE_VIDEO_PROFILE_MPEG4_AVC_MAIN:
       case PIPE_VIDEO_PROFILE_MPEG4_AVC_HIGH:
       case PIPE_VIDEO_PROFILE_MPEG4_AVC_HIGH10:

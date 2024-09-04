@@ -12,6 +12,21 @@ if rc.version().version_compare('< 1.73.0')
   error('NAK requires Rust 1.73.0')
 endif
 
+bindgen_version = find_program('bindgen').version()
+
+if bindgen_version == 'unknown'
+  error('Failed to detect bindgen version. If you are using bindgen 0.69.0, ' +
+        'please either update to 0.69.1 or downgrade to 0.68.1. You can ' +
+        'install the latest version for your user with ' +
+        '`cargo install bindgen-cli`.')
+endif
+
+if bindgen_version.version_compare('< 0.65')
+  error('NAK requires bindgen 0.65 or newer. If your distribution does not ' +
+        'ship a recent enough version, you can install the latest version ' +
+        'for your user with `cargo install bindgen-cli`.')
+endif
+
 nak_rust_args = [
   '-Aclippy::identity_op',
   '-Aclippy::len_zero',
@@ -22,6 +37,9 @@ nak_rust_args = [
   '-Aclippy::upper_case_acronyms',
   '-Aclippy::vec_box',
   '-Aclippy::write_with_newline',
+  # warns about public function might dereference a raw pointer, but nothing is
+  # actually public here
+  '-Aclippy::not_unsafe_ptr_arg_deref',
   '-Anon_snake_case',
 ]
 
@@ -43,6 +61,7 @@ libnak_c_files = files(
   'nak_nir_lower_cf.c',
   'nak_nir_lower_fs_inputs.c',
   'nak_nir_lower_gs_intrinsics.c',
+  'nak_nir_lower_non_uniform_ldcx.c',
   'nak_nir_lower_scan_reduce.c',
   'nak_nir_lower_tex.c',
   'nak_nir_lower_vtg_io.c',

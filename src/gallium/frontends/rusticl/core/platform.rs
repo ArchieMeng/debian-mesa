@@ -11,6 +11,9 @@ use std::ptr::addr_of;
 use std::ptr::addr_of_mut;
 use std::sync::Once;
 
+/// Maximum size a pixel can be across all supported image formats.
+pub const MAX_PIXEL_SIZE_BYTES: u64 = 4 * 4;
+
 #[repr(C)]
 pub struct Platform {
     dispatch: &'static cl_icd_dispatch,
@@ -21,6 +24,7 @@ pub struct PlatformDebug {
     pub allow_invalid_spirv: bool,
     pub clc: bool,
     pub program: bool,
+    pub max_grid_size: u64,
     pub sync_every_event: bool,
     pub validate_spirv: bool,
 }
@@ -66,6 +70,7 @@ static mut PLATFORM_DBG: PlatformDebug = PlatformDebug {
     allow_invalid_spirv: false,
     clc: false,
     program: false,
+    max_grid_size: 0,
     sync_every_event: false,
     validate_spirv: false,
 };
@@ -90,6 +95,11 @@ fn load_env() {
             }
         }
     }
+
+    debug.max_grid_size = env::var("RUSTICL_MAX_WORK_GROUPS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(u64::MAX);
 
     // SAFETY: no other references exist at this point
     let features = unsafe { &mut *addr_of_mut!(PLATFORM_FEATURES) };

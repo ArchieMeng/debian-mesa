@@ -43,6 +43,7 @@
 #include "util/os_misc.h"
 #include "util/os_time.h"
 #include "util/u_helpers.h"
+#include "util/anon_file.h"
 #include "lp_texture.h"
 #include "lp_fence.h"
 #include "lp_jit.h"
@@ -122,12 +123,12 @@ llvmpipe_get_name(struct pipe_screen *screen)
 static int
 llvmpipe_get_param(struct pipe_screen *screen, enum pipe_cap param)
 {
-#ifdef HAVE_LINUX_UDMABUF_H
+#if defined(HAVE_LIBDRM) && defined(HAVE_LINUX_UDMABUF_H)
    struct llvmpipe_screen *lscreen = llvmpipe_screen(screen);
 #endif
 
    switch (param) {
-#ifdef HAVE_LINUX_UDMABUF_H
+#if defined(HAVE_LIBDRM) && defined(HAVE_LINUX_UDMABUF_H)
    case PIPE_CAP_DMABUF:
       if (lscreen->udmabuf_fd != -1)
          return DRM_PRIME_CAP_IMPORT | DRM_PRIME_CAP_EXPORT;
@@ -598,7 +599,15 @@ static void
 llvmpipe_get_device_uuid(struct pipe_screen *pscreen, char *uuid)
 {
    memset(uuid, 0, PIPE_UUID_SIZE);
+#if defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-warning-option"
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif /* __clang__ */
    snprintf(uuid, PIPE_UUID_SIZE, "mesa" PACKAGE_VERSION);
+#if defined(__clang__)
+#pragma GCC diagnostic pop
+#endif /* __clang__ */
 }
 
 
@@ -921,6 +930,12 @@ llvmpipe_destroy_screen(struct pipe_screen *_screen)
    close(screen->udmabuf_fd);
 #endif
 
+#if DETECT_OS_LINUX
+   util_vma_heap_finish(&screen->mem_heap);
+
+   close(screen->fd_mem_alloc);
+   mtx_destroy(&screen->mem_mutex);
+#endif
    mtx_destroy(&screen->rast_mutex);
    mtx_destroy(&screen->cs_mutex);
    FREE(screen);
@@ -1158,8 +1173,20 @@ llvmpipe_create_screen(struct sw_winsys *winsys)
                                               screen->num_threads);
    screen->num_threads = MIN2(screen->num_threads, LP_MAX_THREADS);
 
-#ifdef HAVE_LINUX_UDMABUF_H
+#if defined(HAVE_LIBDRM) && defined(HAVE_LINUX_UDMABUF_H)
    screen->udmabuf_fd = open("/dev/udmabuf", O_RDWR);
+#endif
+
+   uint64_t alignment;
+   if (!os_get_page_size(&alignment))
+      alignment = 256;
+
+#if DETECT_OS_LINUX
+   (void) mtx_init(&screen->mem_mutex, mtx_plain);
+
+   util_vma_heap_init(&screen->mem_heap, alignment, UINT64_MAX - alignment);
+   screen->mem_heap.alloc_high = false;
+   screen->fd_mem_alloc = os_create_anonymous_file(0, "allocation fd");
 #endif
 
    snprintf(screen->renderer_string, sizeof(screen->renderer_string),

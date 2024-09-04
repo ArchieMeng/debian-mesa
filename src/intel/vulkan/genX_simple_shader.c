@@ -30,6 +30,7 @@
 
 #include "genxml/gen_macros.h"
 #include "genxml/genX_pack.h"
+#include "common/intel_compute_slm.h"
 #include "common/intel_genX_state_brw.h"
 
 static void
@@ -109,7 +110,8 @@ genX(emit_simpler_shader_init_fragment)(struct anv_simple_shader *state)
 
    genX(emit_l3_config)(batch, device, state->l3_config);
 
-   state->cmd_buffer->state.current_l3_config = state->l3_config;
+   if (state->cmd_buffer)
+      state->cmd_buffer->state.current_l3_config = state->l3_config;
 
    enum intel_urb_deref_block_size deref_block_size;
    genX(emit_urb_setup)(device, batch, state->l3_config,
@@ -304,6 +306,10 @@ genX(emit_simpler_shader_init_fragment)(struct anv_simple_shader *state)
       device->null_surface_state).offset + bt_offset;
 
    state->cmd_buffer->state.descriptors_dirty |= VK_SHADER_STAGE_FRAGMENT_BIT;
+#endif
+
+#if INTEL_WA_14018283232_GFX_VER
+   genX(cmd_buffer_ensure_wa_14018283232)(state->cmd_buffer, false);
 #endif
 
    /* Flag all the instructions emitted by the memcpy. */
@@ -580,8 +586,8 @@ genX(emit_simple_shader_dispatch)(struct anv_simple_shader *state,
             .BindingTablePointer               = 0,
             .BindingTableEntryCount            = 0,
             .NumberofThreadsinGPGPUThreadGroup = dispatch.threads,
-            .SharedLocalMemorySize             = encode_slm_size(GFX_VER,
-                                                                 prog_data->base.total_shared),
+            .SharedLocalMemorySize             = intel_compute_slm_encode_size(GFX_VER,
+                                                                               prog_data->base.total_shared),
             .NumberOfBarriers                  = prog_data->uses_barrier,
          };
       }
@@ -649,8 +655,8 @@ genX(emit_simple_shader_dispatch)(struct anv_simple_shader *state,
          .SamplerCount                          = 0,
          .BindingTableEntryCount                = 0,
          .BarrierEnable                         = prog_data->uses_barrier,
-         .SharedLocalMemorySize                 = encode_slm_size(GFX_VER,
-                                                                  prog_data->base.total_shared),
+         .SharedLocalMemorySize                 = intel_compute_slm_encode_size(GFX_VER,
+                                                                                prog_data->base.total_shared),
 
          .ConstantURBEntryReadOffset            = 0,
          .ConstantURBEntryReadLength            = prog_data->push.per_thread.regs,
@@ -690,6 +696,7 @@ genX(emit_simple_shader_dispatch)(struct anv_simple_shader *state,
          ggw.RightExecutionMask           = dispatch.right_mask;
          ggw.BottomExecutionMask          = 0xffffffff;
       }
+      anv_batch_emit(batch, GENX(MEDIA_STATE_FLUSH), msf);
 #endif
    }
 }

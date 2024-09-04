@@ -201,9 +201,9 @@ xe_compute_topology(struct intel_device_info * devinfo,
       devinfo->max_subslices_per_slice = 6;
    }
    devinfo->max_eus_per_subslice = 16;
-   devinfo->subslice_slice_stride = 1;
-   devinfo->eu_slice_stride = DIV_ROUND_UP(16 * 4, 8);
-   devinfo->eu_subslice_stride = DIV_ROUND_UP(16, 8);
+   devinfo->subslice_slice_stride = DIV_ROUND_UP(devinfo->max_slices, 8);
+   devinfo->eu_slice_stride = DIV_ROUND_UP(devinfo->max_eus_per_subslice * devinfo->max_subslices_per_slice, 8);
+   devinfo->eu_subslice_stride = DIV_ROUND_UP(devinfo->max_eus_per_subslice, 8);
 
    assert((sizeof(uint32_t) * 8) >= devinfo->max_subslices_per_slice);
    assert((sizeof(uint32_t) * 8) >= devinfo->max_eus_per_subslice);
@@ -296,6 +296,7 @@ xe_query_topology(int fd, struct intel_device_info *devinfo)
             geo_dss_num_bytes = topology->num_bytes;
             break;
          case DRM_XE_TOPO_EU_PER_DSS:
+         case DRM_XE_TOPO_SIMD16_EU_PER_DSS:
             eu_per_dss_mask = (uint32_t *)topology->mask;
             break;
          }
