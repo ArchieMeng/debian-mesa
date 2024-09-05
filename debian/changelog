@@ -1,6 +1,7 @@
 mesa (24.2.1-4) UNRELEASED; urgency=medium
 
   * patches: Add patches to fix autopkgtest regressions in dril.
+  * rules: Enable softpipe everywhere again. (Closes: #1080475)
 
  -- Timo Aaltonen <tjaalton@debian.org>  Thu, 05 Sep 2024 11:20:06 +0300
 
