@@ -1,6 +1,7 @@
 mesa (24.2.2-1) UNRELEASED; urgency=medium
 
   * New upstream release.
+  * patches: dril fixes dropped, upstream.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Fri, 06 Sep 2024 07:07:27 +0300
 
