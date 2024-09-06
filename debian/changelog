@@ -1,3 +1,9 @@
+mesa (24.2.2-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Fri, 06 Sep 2024 07:07:27 +0300
+
 mesa (24.2.1-4) unstable; urgency=medium
 
   * patches: Add patches to fix autopkgtest regressions in dril.
