@@ -1,6 +1,7 @@
 mesa (24.2.3-1) UNRELEASED; urgency=medium
 
   * New upstream release.
+  * patches: Fix build on armel/armhf with llvm-19.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Thu, 19 Sep 2024 09:31:06 +0300
 
