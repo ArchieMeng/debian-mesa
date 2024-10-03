@@ -1,6 +1,7 @@
 mesa (24.2.4-1) UNRELEASED; urgency=medium
 
   * New upstream release.
+  * clc-find-opencl-headers.diff: Dropped, upstream.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Thu, 03 Oct 2024 22:10:58 +0300
 
