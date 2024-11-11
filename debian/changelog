@@ -2,6 +2,7 @@ mesa (24.3.0~rc1-1) UNRELEASED; urgency=medium
 
   * New upstream release candidate.
   * patches: Refreshed.
+  * rules: Drop obsoleted config options.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Sat, 09 Nov 2024 11:05:34 +0200
 
