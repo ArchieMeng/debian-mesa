@@ -1,4 +1,4 @@
-mesa (24.3.0~rc1-1) debian-experimental; urgency=medium
+mesa (24.3.0~rc1-1) experimental; urgency=medium
 
   * New upstream release candidate.
   * patches: Refreshed.
