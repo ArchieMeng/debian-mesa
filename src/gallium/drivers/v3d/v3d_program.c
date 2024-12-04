@@ -262,8 +262,7 @@ v3d_shader_precompile(struct v3d_context *v3d,
                                                                  i);
                 }
                 v3d_get_compiled_shader(v3d, &key.base, sizeof(key), so);
-        } else {
-                assert(s->info.stage == MESA_SHADER_VERTEX);
+        } else if (s->info.stage == MESA_SHADER_VERTEX) {
                 struct v3d_vs_key key = {
                         /* Emit fixed function outputs */
                         .base.is_last_geometry_stage = true,
@@ -286,6 +285,11 @@ v3d_shader_precompile(struct v3d_context *v3d,
                                                                  i);
                 }
                 v3d_get_compiled_shader(v3d, &key.base, sizeof(key), so);
+        } else {
+                assert(s->info.stage == MESA_SHADER_COMPUTE);
+                struct v3d_key key = { 0 };
+                v3d_setup_shared_precompile_key(so, &key);
+                v3d_get_compiled_shader(v3d, &key, sizeof(key), so);
         }
 }
 
@@ -645,6 +649,7 @@ v3d_update_compiled_fs(struct v3d_context *v3d, uint8_t prim_mode)
                             V3D_DIRTY_BLEND |
                             V3D_DIRTY_FRAMEBUFFER |
                             V3D_DIRTY_ZSA |
+                            V3D_DIRTY_OQ |
                             V3D_DIRTY_RASTERIZER |
                             V3D_DIRTY_SAMPLE_STATE |
                             V3D_DIRTY_FRAGTEX |
@@ -673,6 +678,10 @@ v3d_update_compiled_fs(struct v3d_context *v3d, uint8_t prim_mode)
         }
 
         key->swap_color_rb = v3d->swap_color_rb;
+        key->can_earlyz_with_discard = s->info.fs.uses_discard &&
+                (!v3d->zsa || !job->zsbuf || !v3d->zsa->base.depth_enabled ||
+                 !v3d->zsa->base.depth_writemask) &&
+                !(v3d->active_queries && v3d->current_oq);
 
         for (int i = 0; i < v3d->framebuffer.nr_cbufs; i++) {
                 struct pipe_surface *cbuf = v3d->framebuffer.cbufs[i];

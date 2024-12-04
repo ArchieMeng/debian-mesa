@@ -426,6 +426,7 @@ struct v3d_fs_key {
         bool msaa;
         bool sample_alpha_to_coverage;
         bool sample_alpha_to_one;
+        bool can_earlyz_with_discard;
         /* Mask of which color render targets are present. */
         uint8_t cbufs;
         uint8_t swap_color_rb;
@@ -619,7 +620,7 @@ struct v3d_ra_node_info {
                 bool payload_conflict;
 
                 /* V3D 7.x */
-                bool is_ldunif_dst;
+                bool try_rf0;
         } *info;
         uint32_t alloc_count;
 };
@@ -1209,7 +1210,7 @@ bool v3d_nir_lower_txf_ms(nir_shader *s);
 bool v3d_nir_lower_image_load_store(nir_shader *s, struct v3d_compile *c);
 bool v3d_nir_lower_global_2x32(nir_shader *s);
 bool v3d_nir_lower_load_store_bitsize(nir_shader *s);
-bool v3d_nir_lower_algebraic(struct nir_shader *shader);
+bool v3d_nir_lower_algebraic(struct nir_shader *shader, const struct v3d_compile *c);
 
 void v3d_vir_emit_tex(struct v3d_compile *c, nir_tex_instr *instr);
 void v3d_vir_emit_image_load_store(struct v3d_compile *c,

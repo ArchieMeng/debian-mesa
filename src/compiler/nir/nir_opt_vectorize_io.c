@@ -69,15 +69,31 @@ compare_is_not_vectorizable(nir_intrinsic_instr *a, nir_intrinsic_instr *b)
    if (sem0.interp_explicit_strict != sem1.interp_explicit_strict)
       return sem0.interp_explicit_strict > sem1.interp_explicit_strict ? 1 : -1;
 
-   if (sem0.per_primitive != sem1.per_primitive)
-      return sem0.per_primitive > sem1.per_primitive ? 1 : -1;
-
    /* Only load_interpolated_input can't merge low and high halves of 16-bit
     * loads/stores.
     */
    if (a->intrinsic == nir_intrinsic_load_interpolated_input &&
        sem0.high_16bits != sem1.high_16bits)
       return sem0.high_16bits > sem1.high_16bits ? 1 : -1;
+
+   nir_shader *shader =
+      nir_cf_node_get_function(&a->instr.block->cf_node)->function->shader;
+
+   /* Compare the types. */
+   if (!(shader->options->io_options & nir_io_vectorizer_ignores_types)) {
+      unsigned type_a, type_b;
+
+      if (nir_intrinsic_has_src_type(a)) {
+         type_a = nir_intrinsic_src_type(a);
+         type_b = nir_intrinsic_src_type(b);
+      } else {
+         type_a = nir_intrinsic_dest_type(a);
+         type_b = nir_intrinsic_dest_type(b);
+      }
+
+      if (type_a != type_b)
+         return type_a > type_b ? 1 : -1;
+   }
 
    return 0;
 }
@@ -179,7 +195,12 @@ vectorize_store(nir_intrinsic_instr *chan[8], unsigned start, unsigned count,
     * because we need to read some info from "last" before overwriting it.
     */
    if (nir_intrinsic_has_io_xfb(last)) {
-      nir_io_xfb xfb[2] = {{{{0}}}};
+      /* 0 = low/full XY channels
+       * 1 = low/full ZW channels
+       * 2 = high XY channels
+       * 3 = high ZW channels
+       */
+      nir_io_xfb xfb[4] = {{{{0}}}};
 
       for (unsigned i = start; i < start + count; i++) {
          xfb[i / 2].out[i % 2] =
@@ -275,7 +296,7 @@ vectorize_store(nir_intrinsic_instr *chan[8], unsigned start, unsigned count,
 
       nir_src_rewrite(&last->src[0], nir_vec(&b, &value[start], count));
    } else {
-      nir_def *value[4];
+      nir_def *value[8];
       for (unsigned i = start; i < start + count; i++)
          value[i] = chan[i]->src[0].ssa;
 
@@ -449,8 +470,9 @@ nir_opt_vectorize_io(nir_shader *shader, nir_variable_mode modes)
        * but that is only done when outputs are ignored, so vectorize them
        * separately.
        */
-      return nir_opt_vectorize_io(shader, nir_var_shader_in) ||
-             nir_opt_vectorize_io(shader, nir_var_shader_out);
+      bool progress_in = nir_opt_vectorize_io(shader, nir_var_shader_in);
+      bool progress_out = nir_opt_vectorize_io(shader, nir_var_shader_out);
+      return progress_in || progress_out;
    }
 
    /* Initialize dynamic arrays. */
@@ -488,6 +510,7 @@ nir_opt_vectorize_io(nir_shader *shader, nir_variable_mode modes)
 
             switch (intr->intrinsic) {
             case nir_intrinsic_load_input:
+            case nir_intrinsic_load_per_primitive_input:
             case nir_intrinsic_load_input_vertex:
             case nir_intrinsic_load_interpolated_input:
             case nir_intrinsic_load_per_vertex_input:
