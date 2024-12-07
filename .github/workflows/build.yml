@@ -13,17 +13,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    # - name: Set up QEMU
-    #   uses: docker/setup-qemu-action@v3
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
     - name: Build packages in the container
       run: |
         docker run \
         -v ${{ github.workspace }}:/sources -v /tmp/results:/results \
-        quay.io/droidian/build-essential:next-amd64 /bin/bash -c '''
+        quay.io/droidian/build-essential:current-arm64 /bin/bash -c '''
         apt update
         cd /sources
         apt build-dep -y . 
-        dpkg-buildpackage -a arm64 -us -uc -b
+        dpkg-buildpackage -us -uc -b
         mv -v ../*.deb ../*.buildinfo ../*.changes /results
         '''
     - uses: actions/upload-artifact@v4
