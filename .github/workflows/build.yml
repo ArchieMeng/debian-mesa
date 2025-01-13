@@ -9,12 +9,12 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, ARM64]
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+    # - name: Set up QEMU
+    #   uses: docker/setup-qemu-action@v3
     - name: Build packages in the container
       run: |
         docker run \
