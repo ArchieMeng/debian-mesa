@@ -25,17 +25,19 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+    - name: Fixup upstream tag for releng-build-package
+      run: |
+        orig_tag=$(echo "$(head -n 1 debian/changelog)" | awk '{ print $2 }' | cut -d- -f1 | sed 's/(//' | cut -d':' -f2-)
+        git remote add upstream https://gitlab.freedesktop.org/mesa/mesa.git/
+        git fetch -a -t upstream
+        git tag upstream/"$orig_tag" mesa-"$orig_tag"
     - name: Build packages in the container
       run: |
         docker run \
         -v ${{ github.workspace }}:/sources -v /tmp/results:/results \
         quay.io/droidian/build-essential:current-arm64 /bin/bash -c '''
-        apt update
         cd /sources
-        apt build-dep -y . 
-        dpkg-buildpackage -us -uc -b
+        RELENG_HOST_ARCH="arm64" releng-build-package
         mv -v ../*.deb ../*.buildinfo ../*.changes /results
         '''
     - uses: actions/upload-artifact@v4
