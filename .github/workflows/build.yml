@@ -35,7 +35,7 @@ jobs:
       run: |
         docker run \
         -v ${{ github.workspace }}:/sources -v /tmp/results:/results \
-        quay.io/droidian/build-essential:current-arm64 /bin/bash -c '''
+        quay.io/droidian/build-essential:next-arm64 /bin/bash -c '''
         cd /sources
         RELENG_HOST_ARCH="arm64" releng-build-package
         mv -v ../*.deb ../*.buildinfo ../*.changes /results
