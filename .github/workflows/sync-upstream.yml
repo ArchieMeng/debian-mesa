@@ -1,0 +1,18 @@
+name: Sync/Rebase on Upstream
+on:
+  schedule:
+  - cron: "0 0 * * *"  # run daily
+  workflow_dispatch:   # run manually
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+      with:
+        fetch-depth: 0  # Fetch all history for rebase
+    - uses: archiemeng/rebase-upstream-action@master
+      with:
+        upstream: https://salsa.debian.org/xorg-team/lib/mesa
+        branch: debian-unstable
+        depth: 0
