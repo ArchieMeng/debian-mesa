@@ -11,8 +11,19 @@ jobs:
     - uses: actions/checkout@master
       with:
         fetch-depth: 0  # Fetch all history for rebase
+    - name: Get initial hash
+      id: get-initial-hash
+      run: echo "init_hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
     - uses: archiemeng/rebase-upstream-action@master
       with:
         upstream: https://salsa.debian.org/xorg-team/lib/mesa
         branch: debian-unstable
         depth: 0
+    - name: Get current hash
+      id: get-current-hash
+      run: echo "cur_hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+    - name: Workflow Dispatch
+      uses: benc-uk/workflow-dispatch@v1.2.4
+      if: ${{ steps.get-initial-hash.outputs.init_hash != steps.get-current-hash.outputs.cur_hash }}
+      with:
+        workflow: build.yml
