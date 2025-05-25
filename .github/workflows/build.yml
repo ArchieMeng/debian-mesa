@@ -9,7 +9,7 @@ on:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -44,6 +44,17 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         path: /tmp/results
+    - name: Delete old latest release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release delete latest --yes | true
+    - name: Create latest release
+      uses: softprops/action-gh-release@v2.2.2
+      with:
+        files: /tmp/results/*
+        tag_name: latest
+        draft: false
     - name: Generate files for Github Page of this repo
       run: |
         cd /tmp/results
