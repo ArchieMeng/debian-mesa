@@ -49,11 +49,13 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         gh release delete latest --yes | true
+    - name: Get version
+      run: echo "version=$(head -n1 debian/changelog | cut -d '(' -f2 | cut -d ')' -f1 | sed 's/+/-/g')" >> $GITHUB_ENV
     - name: Create latest release
       uses: softprops/action-gh-release@v2.2.2
       with:
         files: /tmp/results/*
-        tag_name: latest
+        tag_name: ${{ env.version }}
         draft: false
     - name: Generate files for Github Page of this repo
       run: |
