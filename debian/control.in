@@ -12,7 +12,7 @@ Build-Depends:
  spirv-tools-dev (>= 2024.4~rc1) [@LLVM_ARCHS@],
  meson (>= 1.7.0),
  pkgconf,
- libdrm-dev (>= 2.4.125-1),
+ libdrm-dev (>= 2.4.124-2),
  libx11-dev,
  libxxf86vm-dev,
  libexpat1-dev,
