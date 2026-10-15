@@ -1,3 +1,9 @@
+mesa (26.2.5-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Timo Aaltonen <tjaalton@debian.org>  Thu, 15 Oct 2026 14:58:12 +0300
+
 mesa (26.2.4-1) unstable; urgency=medium
 
   [ Daniel van Vugt ]
