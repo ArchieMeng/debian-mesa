@@ -384,6 +384,13 @@ radv_amdgpu_winsys_bo_destroy(struct radeon_winsys *_ws, struct radeon_winsys_bo
       radv_amdgpu_global_bo_list_del(ws, bo);
 
    const uint64_t va_size = radv_amdgpu_bo_va_size(bo->base.size, bo->flags);
+
+   if (bo->flags & RADEON_FLAG_VM_PAD_1PAGE) {
+      /* Unmap the VM padding separately because the ioctl can only unmap one mapping at a time. */
+      radv_amdgpu_bo_va_op(ws, bo->bo_handle, 0, 4096, bo->base.va + align64(bo->base.size, 4096), 0, 0,
+                           AMDGPU_VA_OP_UNMAP);
+   }
+
    radv_amdgpu_bo_va_op(ws, bo->bo_handle, 0, va_size, bo->base.va, 0, 0, AMDGPU_VA_OP_UNMAP);
    ac_drm_bo_free(ws->dev, bo->bo);
 

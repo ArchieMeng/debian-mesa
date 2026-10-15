@@ -1872,7 +1872,8 @@ print_block_ppp_state_stream_out(struct pvr_dump_csb_ctx *const csb_ctx,
          device,
          BUFFER_TYPE_NONE,
          PVR_DEV_ADDR_OFFSET(pds_heap_base, stream_out2.pds_data_addr.addr),
-         stream_out1.pds_data_size,
+         stream_out1.pds_data_size *
+            ROGUE_TA_STATE_STREAM_OUT1_PDS_DATA_SIZE_UNIT_SIZE,
          "pds_data_size");
       if (!ret)
          goto end_pop_ctx;

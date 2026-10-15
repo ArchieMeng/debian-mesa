@@ -631,10 +631,17 @@ emit_scaled_op(isel_context* ctx, Builder& bld, Definition dst, Temp val, aco_op
                                   ->valu();
       valu.neg[0] = true;
       valu.abs[0] = true;
-      scale = bld.vop2_e64(aco_opcode::v_cndmask_b32, bld.def(v1), Operand::c32(0x3f800000),
-                           bld.copy(bld.def(s1), Operand::c32(0x4b800000u)), is_denormal);
-      unscale = bld.vop2_e64(aco_opcode::v_cndmask_b32, bld.def(v1), Operand::c32(0x3f800000),
-                             bld.copy(bld.def(s1), Operand::c32(undo)), is_denormal);
+      if (ctx->options->gfx_level >= GFX10) {
+         scale = bld.vop2_e64(aco_opcode::v_cndmask_b32, bld.def(v1), Operand::c32(0x3f800000),
+                              bld.copy(bld.def(s1), Operand::c32(0x4b800000u)), is_denormal);
+         unscale = bld.vop2_e64(aco_opcode::v_cndmask_b32, bld.def(v1), Operand::c32(0x3f800000),
+                                bld.copy(bld.def(s1), Operand::c32(undo)), is_denormal);
+      } else {
+         scale = bld.vop2(aco_opcode::v_cndmask_b32, bld.def(v1), Operand::c32(0x3f800000),
+                          bld.copy(bld.def(v1), Operand::c32(0x4b800000u)), is_denormal);
+         unscale = bld.vop2(aco_opcode::v_cndmask_b32, bld.def(v1), Operand::c32(0x3f800000),
+                            bld.copy(bld.def(v1), Operand::c32(undo)), is_denormal);
+      }
    } else {
       Temp abs = bld.sop2(aco_opcode::s_and_b32, bld.def(s1), bld.def(s1, scc), val,
                           bld.copy(bld.def(s1), Operand::c32(0x7fffffff)));

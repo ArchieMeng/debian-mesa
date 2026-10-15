@@ -1655,9 +1655,9 @@ csf_emit_draw_state(struct panfrost_batch *batch,
    struct mali_primitive_size_packed primsize;
    panfrost_emit_primitive_size(ctx, info->mode == MESA_PRIM_POINTS, 0,
                                 &primsize);
-   struct mali_primitive_size_packed *primsize_ptr = &primsize;
+
    cs_move64_to(b, cs_sr_reg64(b, IDVS, PRIMITIVE_SIZE),
-                *((uint64_t *)primsize_ptr));
+                primsize.opaque[0] | (uint64_t)primsize.opaque[1] << 32);
 #endif
 
    struct mali_primitive_flags_packed flags_override;

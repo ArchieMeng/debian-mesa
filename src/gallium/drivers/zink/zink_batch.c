@@ -36,6 +36,7 @@ reset_obj(struct zink_screen *screen, struct zink_batch_state *bs, struct zink_r
       obj->last_write = 0;
       obj->access_stage = 0;
       obj->unordered_access_stage = 0;
+      obj->has_ordered_access = false;
       obj->copies_need_reset = true;
       obj->unsync_access = true;
       if (obj->dt)
@@ -842,7 +843,9 @@ submit_queue(void *data, void *gdata, int thread_index)
 
    bs->usage.submit_count++;
 end:
+   mtx_lock(&bs->usage.mtx);
    cnd_broadcast(&bs->usage.flush);
+   mtx_unlock(&bs->usage.mtx);
 
    post_submit(bs, screen);
 
@@ -957,7 +960,9 @@ zink_end_batch(struct zink_context *ctx)
       util_queue_add_job(&screen->flush_queue, bs, &bs->flush_completed,
                          submit_queue, NULL, 0);
    } else {
+      simple_mtx_lock(&screen->submit_lock);
       submit_queue(bs, NULL, 0);
+      simple_mtx_unlock(&screen->submit_lock);
    }
 
    ctx->last_transfer_sync = 0;
@@ -1211,7 +1216,7 @@ zink_batch_usage_unflushed_wait(struct zink_context *ctx, struct zink_batch_usag
          if (trywait) {
             struct timespec ts = {0, 10000};
             cnd_timedwait(&u->flush, &u->mtx, &ts);
-         } else
+         } else if (u->unflushed)
             cnd_wait(&u->flush, &u->mtx);
          mtx_unlock(&u->mtx);
       }

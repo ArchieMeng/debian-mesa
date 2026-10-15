@@ -492,14 +492,10 @@ kopper_init_drawable(struct dri_drawable *drawable, bool isPixmap, int alphaBits
       VkXcbSurfaceCreateInfoKHR *xcb = (VkXcbSurfaceCreateInfoKHR *)&drawable->info.bos;
       xcb_connection_t *conn = xcb->connection;
 
-      int32_t eid = xcb_generate_id(conn);
-      if (drawable->is_window) {
-         xcb_present_select_input(conn, eid, xcb->window,
-                                  XCB_PRESENT_EVENT_MASK_COMPLETE_NOTIFY);
-      }
-
+      drawable->present_eid = xcb_generate_id(conn);
       drawable->special_event =
-         xcb_register_for_special_xge(conn, &xcb_present_id, eid, NULL);
+         xcb_register_for_special_xge(conn, &xcb_present_id,
+                                      drawable->present_eid, NULL);
    }
 #endif
 }
@@ -589,7 +585,6 @@ kopper_swap_buffers(struct dri_drawable *drawable)
 void
 kopperSetSwapInterval(struct dri_drawable *drawable, int interval)
 {
-   struct dri_screen *screen = drawable->screen;
    struct pipe_resource *ptex = drawable->textures[ST_ATTACHMENT_BACK_LEFT] ?
                                 drawable->textures[ST_ATTACHMENT_BACK_LEFT] :
                                 drawable->textures[ST_ATTACHMENT_FRONT_LEFT];
@@ -603,8 +598,9 @@ kopperSetSwapInterval(struct dri_drawable *drawable, int interval)
     * the swapchain is eventually created.
     */
    if (ptex) {
-      struct pipe_screen *pscreen = kopper_get_zink_screen(screen->base.screen);
-      zink_kopper_set_swap_interval(pscreen, ptex, interval);
+      struct dri_context *ctx = dri_get_current();
+      _mesa_glthread_finish(ctx->st->ctx);
+      zink_kopper_set_swap_interval(ctx->st->pipe, ptex, interval);
    }
 }
 
@@ -647,6 +643,11 @@ kopperGetSyncValues(struct dri_drawable *drawable, int64_t target_msc, int64_t d
    VkXcbSurfaceCreateInfoKHR *xcb = (VkXcbSurfaceCreateInfoKHR *)&info->bos;
    xcb_connection_t *conn = xcb->connection;
 
+   if (!drawable->is_window)
+      return 0;
+
+   xcb_present_select_input(conn, drawable->present_eid, xcb->window,
+                            XCB_PRESENT_EVENT_MASK_COMPLETE_NOTIFY);
    xcb_void_cookie_t cookie =
       xcb_present_notify_msc(conn, xcb->window, 0, target_msc, divisor, remainder);
 
@@ -679,6 +680,8 @@ kopperGetSyncValues(struct dri_drawable *drawable, int64_t target_msc, int64_t d
 
       free(event);
    }
+
+   xcb_present_select_input(conn, drawable->present_eid, xcb->window, 0);
 
    return ret;
 #else

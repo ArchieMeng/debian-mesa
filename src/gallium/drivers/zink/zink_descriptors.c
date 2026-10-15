@@ -113,14 +113,16 @@ create_layout(struct zink_screen *screen, enum zink_descriptor_type type,
       return NULL;
 
    size_t bindings_size = num_bindings * sizeof(VkDescriptorSetLayoutBinding);
+   simple_mtx_lock(&screen->ralloc_lock);
    struct zink_descriptor_layout_key *k = ralloc_size(screen, sizeof(struct zink_descriptor_layout_key) + bindings_size);
+   struct zink_descriptor_layout *layout = rzalloc(screen, struct zink_descriptor_layout);
+   simple_mtx_unlock(&screen->ralloc_lock);
    k->num_bindings = num_bindings;
    if (num_bindings) {
       k->bindings = (void *)(k + 1);
       memcpy(k->bindings, bindings, bindings_size);
    }
 
-   struct zink_descriptor_layout *layout = rzalloc(screen, struct zink_descriptor_layout);
    layout->layout = dsl;
    *layout_key = k;
    return layout;
@@ -140,9 +142,9 @@ descriptor_util_layout_get(struct zink_screen *screen, enum zink_descriptor_type
    /* push descriptor layouts are unique and can't be reused */
    if (type != ZINK_DESCRIPTOR_TYPE_UNIFORMS) {
       hash = hash_descriptor_layout(&key);
-      simple_mtx_lock(&screen->desc_set_layouts_lock);
+      simple_mtx_lock(&screen->ralloc_lock);
       struct hash_entry *he = _mesa_hash_table_search_pre_hashed(&screen->desc_set_layouts[type], hash, &key);
-      simple_mtx_unlock(&screen->desc_set_layouts_lock);
+      simple_mtx_unlock(&screen->ralloc_lock);
       if (he) {
          *layout_key = (void*)he->key;
          return he->data;
@@ -151,18 +153,18 @@ descriptor_util_layout_get(struct zink_screen *screen, enum zink_descriptor_type
 
    struct zink_descriptor_layout *layout = create_layout(screen, type, bindings, num_bindings, layout_key);
    if (layout && type != ZINK_DESCRIPTOR_TYPE_UNIFORMS) {
-      simple_mtx_lock(&screen->desc_set_layouts_lock);
+      simple_mtx_lock(&screen->ralloc_lock);
       struct hash_entry *he = _mesa_hash_table_search_pre_hashed(&screen->desc_set_layouts[type], hash, &key);
       if (he) {
          VKSCR(DestroyDescriptorSetLayout)(screen->dev, layout->layout, NULL);
          ralloc_free(layout);
          *layout_key = (void*)he->key;
-         simple_mtx_unlock(&screen->desc_set_layouts_lock);
+         simple_mtx_unlock(&screen->ralloc_lock);
          return he->data;
       } else {
          _mesa_hash_table_insert_pre_hashed(&screen->desc_set_layouts[type], hash, *layout_key, layout);
       }
-      simple_mtx_unlock(&screen->desc_set_layouts_lock);
+      simple_mtx_unlock(&screen->ralloc_lock);
    }
    return layout;
 }
@@ -213,13 +215,17 @@ descriptor_util_pool_key_get(struct zink_screen *screen, enum zink_descriptor_ty
       }
    }
 
+   simple_mtx_lock(&screen->ralloc_lock);
    struct zink_descriptor_pool_key *pool_key = rzalloc(screen, struct zink_descriptor_pool_key);
+   simple_mtx_unlock(&screen->ralloc_lock);
    pool_key->layout = layout_key;
    pool_key->num_type_sizes = num_type_sizes;
    assert(pool_key->num_type_sizes);
    memcpy(pool_key->sizes, sizes, num_type_sizes * sizeof(VkDescriptorPoolSize));
    if (type != ZINK_DESCRIPTOR_TYPE_UNIFORMS) {
+      simple_mtx_lock(&screen->ralloc_lock);
       _mesa_set_add_pre_hashed(&screen->desc_pool_keys[type], hash, pool_key);
+      simple_mtx_unlock(&screen->ralloc_lock);
       pool_key->id = screen->desc_pool_keys[type].entries - 1;
       simple_mtx_unlock(&screen->desc_pool_keys_lock);
    }
@@ -1749,7 +1755,6 @@ zink_descriptor_layouts_init(struct zink_screen *screen)
       _mesa_hash_table_init(&screen->desc_set_layouts[i], screen, hash_descriptor_layout, equals_descriptor_layout);
       _mesa_set_init(&screen->desc_pool_keys[i], screen, hash_descriptor_pool_key, equals_descriptor_pool_key);
    }
-   simple_mtx_init(&screen->desc_set_layouts_lock, mtx_plain);
    simple_mtx_init(&screen->desc_pool_keys_lock, mtx_plain);
    return true;
 }
@@ -1766,7 +1771,7 @@ zink_descriptor_layouts_deinit(struct zink_screen *screen)
          _mesa_hash_table_remove(&screen->desc_set_layouts[i], he);
       }
    }
-   simple_mtx_destroy(&screen->desc_set_layouts_lock);
+   simple_mtx_destroy(&screen->ralloc_lock);
    simple_mtx_destroy(&screen->desc_pool_keys_lock);
 }
 

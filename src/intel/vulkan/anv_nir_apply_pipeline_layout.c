@@ -964,6 +964,8 @@ build_surface_index_for_binding(nir_builder *b,
             final_offset, 1, 32, state);
       } else {
          set_offset = anv_load_driver_uniform(b, 1, desc_surface_offsets[set]);
+         if (state->bind_map->layout_type == ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_DIRECT)
+            set_offset = nir_iand_imm(b, set_offset, ANV_DESCRIPTOR_SET_OFFSET_MASK);
 
          /* With bindless indexes are offsets in the descriptor buffer */
          surface_index =

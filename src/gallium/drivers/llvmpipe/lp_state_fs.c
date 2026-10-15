@@ -4369,7 +4369,7 @@ llvmpipe_set_shader_buffers(struct pipe_context *pipe,
       util_copy_shader_buffer(&llvmpipe->ssbos[shader][i], buffer);
 
       if (buffer && buffer->buffer) {
-         bool read_only = !(writable_bitmask & (1 << idx));
+         bool read_only = !(writable_bitmask & BITFIELD_BIT(idx));
          llvmpipe_flush_resource(pipe, buffer->buffer, 0, read_only, false,
                                  false, "buffer");
       }
@@ -4399,7 +4399,7 @@ llvmpipe_set_shader_buffers(struct pipe_context *pipe,
          llvmpipe->dirty |= LP_NEW_MESH_SSBOS;
          break;
       case MESA_SHADER_FRAGMENT:
-         llvmpipe->fs_ssbo_write_mask &= ~(((1 << count) - 1) << start_slot);
+         llvmpipe->fs_ssbo_write_mask &= ~BITFIELD_RANGE(start_slot, count);
          llvmpipe->fs_ssbo_write_mask |= writable_bitmask << start_slot;
          llvmpipe->dirty |= LP_NEW_FS_SSBOS;
          break;

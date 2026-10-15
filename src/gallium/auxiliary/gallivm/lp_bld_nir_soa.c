@@ -421,7 +421,17 @@ static LLVMValueRef first_active_invocation(struct lp_build_nir_soa_context *bld
    /* Turn it from N x i1 to iN, then extend it up to i32 so we can use a single
     * cttz intrinsic -- I assume the compiler will drop the extend if there are
     * smaller instructions available, since we have is_zero_poison.
+    *
+    * The bitcast puts element 0 in the most significant bit on big-endian
+    * hosts, so reverse the elements first there.
     */
+   if (UTIL_ARCH_BIG_ENDIAN) {
+      LLVMValueRef shuffles[LP_MAX_VECTOR_LENGTH];
+      for (unsigned i = 0; i < uint_bld->type.length; i++)
+         shuffles[i] = lp_build_const_int32(gallivm, uint_bld->type.length - 1 - i);
+      bitmask = LLVMBuildShuffleVector(builder, bitmask, LLVMGetUndef(LLVMTypeOf(bitmask)),
+                                       LLVMConstVector(shuffles, uint_bld->type.length), "");
+   }
    bitmask = LLVMBuildBitCast(builder, bitmask, LLVMIntTypeInContext(gallivm->context, uint_bld->type.length), "exec_bitmask");
    bitmask = LLVMBuildZExt(builder, bitmask, bld->int_bld.elem_type, "");
 
@@ -461,13 +471,8 @@ emit_fetch_64bit(
    assert(len <= (2 * (LP_MAX_VECTOR_WIDTH/32)));
 
    for (i = 0; i < bld->base.type.length * 2; i+=2) {
-#if UTIL_ARCH_LITTLE_ENDIAN
       shuffles[i] = lp_build_const_int32(gallivm, i / 2);
       shuffles[i + 1] = lp_build_const_int32(gallivm, i / 2 + bld->base.type.length);
-#else
-      shuffles[i] = lp_build_const_int32(gallivm, i / 2 + bld->base.type.length);
-      shuffles[i + 1] = lp_build_const_int32(gallivm, i / 2);
-#endif
    }
    res = LLVMBuildShuffleVector(builder, input, input2, LLVMConstVector(shuffles, len), "");
 
@@ -488,13 +493,8 @@ emit_store_64bit_split(struct lp_build_nir_soa_context *bld,
 
    value = LLVMBuildBitCast(gallivm->builder, value, LLVMVectorType(LLVMFloatTypeInContext(gallivm->context), len), "");
    for (i = 0; i < bld->base.type.length; i++) {
-#if UTIL_ARCH_LITTLE_ENDIAN
       shuffles[i] = lp_build_const_int32(gallivm, i * 2);
       shuffles2[i] = lp_build_const_int32(gallivm, (i * 2) + 1);
-#else
-      shuffles[i] = lp_build_const_int32(gallivm, i * 2 + 1);
-      shuffles2[i] = lp_build_const_int32(gallivm, i * 2);
-#endif
    }
 
    split_values[0] = LLVMBuildShuffleVector(builder, value,
@@ -3099,17 +3099,16 @@ lp_build_unpack(struct lp_build_context *bld, LLVMValueRef value,
       LLVMVectorType(LLVMIntTypeInContext(gallivm->context, dst_bit_size), num_components * length);
    value = LLVMBuildBitCast(builder, value, vec_type, "");
 
+   /* The bitcast puts the most significant bits first on big-endian. */
+   unsigned elem = UTIL_ARCH_LITTLE_ENDIAN ? component :
+                                             num_components - component - 1;
+
    if (length == 1)
-      return LLVMBuildExtractElement(builder, value, lp_build_const_int32(gallivm, component), "");
+      return LLVMBuildExtractElement(builder, value, lp_build_const_int32(gallivm, elem), "");
 
    LLVMValueRef shuffle[LP_MAX_VECTOR_WIDTH / 32];
-   for (unsigned i = 0; i < length; i++) {
-#if UTIL_ARCH_LITTLE_ENDIAN
-      shuffle[i] = lp_build_const_int32(gallivm, (i * num_components) + component);
-#else
-      shuffle[i] = lp_build_const_int32(gallivm, (i * num_components) + (num_components - component - 1));
-#endif
-   }
+   for (unsigned i = 0; i < length; i++)
+      shuffle[i] = lp_build_const_int32(gallivm, (i * num_components) + elem);
    return LLVMBuildShuffleVector(builder, value, LLVMGetUndef(vec_type),
                                  LLVMConstVector(shuffle, length), "");
 }

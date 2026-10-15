@@ -229,6 +229,7 @@ zink_resource_disable_unordered(struct zink_resource *res, bool disable_write)
 {
    res->obj->unordered_read = false;
    res->obj->ordered_access_is_copied = false;
+   res->obj->has_ordered_access = true;
    if (disable_write)
       zink_resource_disable_unordered_write(res);
 }

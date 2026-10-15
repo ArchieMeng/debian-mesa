@@ -180,6 +180,7 @@ destroy_swapchain(struct zink_screen *screen, struct kopper_swapchain *cswap)
       util_dynarray_fini(arr);
       free(arr);
    }
+   simple_mtx_destroy(&cswap->lock);
    _mesa_hash_table_u64_destroy(cswap->presents);
    VKSCR(DestroySwapchainKHR)(screen->dev, cswap->swapchain, NULL);
    free(cswap);
@@ -190,10 +191,12 @@ prune_old_swapchains(struct zink_screen *screen, struct kopper_displaytarget *cd
 {
    while (cdt->old_swapchain) {
       struct kopper_swapchain *cswap = cdt->old_swapchain;
-      if (cswap->async_presents) {
-         if (wait)
-            continue;
-         return;
+      /* present_fence is always in signalled state when !cdt->async */
+      if (cdt->async && cdt->swapchain && !util_queue_fence_is_signalled(&cdt->swapchain->present_fence)) {
+         if (!wait)
+            return;
+         util_queue_fence_wait(&cdt->swapchain->present_fence);
+         assert(!p_atomic_read_relaxed(&cswap->async_presents));
       }
       struct zink_batch_usage *u = cswap->batch_uses;
       if (!zink_screen_usage_check_completion(screen, u)) {
@@ -261,10 +264,12 @@ zink_kopper_deinit_displaytarget(struct zink_screen *screen, struct kopper_displ
    cdt = he->data;
    _mesa_hash_table_remove(&screen->dts, he);
    simple_mtx_unlock(&screen->dt_lock);
-   destroy_swapchain(screen, cdt->swapchain);
+   struct kopper_swapchain *cswap = cdt->swapchain;
+   cdt->swapchain = NULL;
+   destroy_swapchain(screen, cswap);
    prune_old_swapchains(screen, cdt, true);
    VKSCR(DestroySurfaceKHR)(screen->instance, cdt->surface, NULL);
-   cdt->swapchain = cdt->old_swapchain = NULL;
+   cdt->old_swapchain = NULL;
    cdt->surface = VK_NULL_HANDLE;
 }
 
@@ -279,6 +284,7 @@ kopper_CreateSwapchain(struct zink_screen *screen, struct kopper_displaytarget *
    }
    cswap->last_present_prune = 1;
    util_queue_fence_init(&cswap->present_fence);
+   simple_mtx_init(&cswap->lock, mtx_plain);
 
    bool has_alpha = cdt->info.has_alpha && (cdt->caps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR);
    if (cdt->swapchain) {
@@ -417,11 +423,13 @@ update_swapchain(struct zink_screen *screen, struct kopper_displaytarget *cdt, u
    VkResult error = update_caps(screen, cdt);
    if (error != VK_SUCCESS)
       return error;
+   if (cdt->async)
+      util_queue_fence_wait(&cdt->swapchain->present_fence);
    struct kopper_swapchain *cswap = kopper_CreateSwapchain(screen, cdt, w, h, &error);
    if (!cswap)
       return error;
    prune_old_swapchains(screen, cdt, false);
-   for (struct kopper_swapchain **pswap = &cdt->old_swapchain; *pswap; *pswap = (*pswap)->next) {
+   for (struct kopper_swapchain **pswap = &cdt->old_swapchain; *pswap; pswap = &(*pswap)->next) {
       if (!(*pswap)->next) {
          (*pswap)->next = cdt->swapchain;
          break;
@@ -619,7 +627,9 @@ kopper_acquire(struct zink_screen *screen, struct zink_resource *res, uint64_t t
          if (!acquire)
             return VK_ERROR_OUT_OF_HOST_MEMORY;
       }
+      simple_mtx_lock(&cdt->swapchain->lock);
       ret = VKSCR(AcquireNextImageKHR)(screen->dev, cdt->swapchain->swapchain, timeout, acquire, VK_NULL_HANDLE, &res->obj->dt_idx);
+      simple_mtx_unlock(&cdt->swapchain->lock);
       if (ret != VK_SUCCESS && ret != VK_SUBOPTIMAL_KHR) {
          if (ret == VK_ERROR_OUT_OF_DATE_KHR) {
             res->obj->new_dt = true;
@@ -655,6 +665,7 @@ kopper_acquire(struct zink_screen *screen, struct zink_resource *res, uint64_t t
    }
    res->obj->unordered_read = true;
    res->obj->unordered_write = true;
+   res->obj->has_ordered_access = false;
    res->obj->access = 0;
    res->obj->unordered_access = 0;
    /* this is the stage used by the acquire semaphore */
@@ -719,9 +730,8 @@ zink_kopper_acquire(struct zink_context *ctx, struct zink_resource *res, uint64_
    } else if (is_swapchain_kill(ret)) {
       kill_swapchain(ctx, res);
    }
-   bool is_kill = is_swapchain_kill(ret);
    zink_batch_usage_set(&cdt->swapchain->batch_uses, ctx->bs);
-   return !is_kill;
+   return ret == VK_SUCCESS || ret == VK_SUBOPTIMAL_KHR;
 }
 
 VkSemaphore
@@ -796,7 +806,9 @@ kopper_present(void *data, void *gdata, int thread_idx)
       cpi->info.pWaitSemaphores = NULL;
       cpi->info.waitSemaphoreCount = 0;
    }
+   simple_mtx_lock(&swapchain->lock);
    VkResult error2 = VKSCR(QueuePresentKHR)(screen->queue, &cpi->info);
+   simple_mtx_unlock(&swapchain->lock);
    zink_screen_debug_marker_end(screen, screen->frame_marker_emitted);
    zink_screen_debug_marker_begin(screen, "frame");
    simple_mtx_unlock(screen->queue_lock);
@@ -1216,13 +1228,15 @@ zink_kopper_check(struct pipe_resource *pres)
 }
 
 void
-zink_kopper_set_swap_interval(struct pipe_screen *pscreen, struct pipe_resource *pres, int interval)
+zink_kopper_set_swap_interval(struct pipe_context *pctx, struct pipe_resource *pres, int interval)
 {
    struct zink_resource *res = zink_resource(pres);
-   struct zink_screen *screen = zink_screen(pscreen);
+   struct zink_screen *screen = zink_screen(pctx->screen);
    assert(res->obj->dt);
    struct kopper_displaytarget *cdt = res->obj->dt;
    VkPresentModeKHR old_present_mode = cdt->present_mode;
+
+   zink_tc_context_unwrap(pctx);
 
    zink_kopper_set_present_mode_for_interval(cdt, interval);
 
@@ -1232,7 +1246,7 @@ zink_kopper_set_swap_interval(struct pipe_screen *pscreen, struct pipe_resource 
       /* only update swapchain when there is no current acquire to avoid flickering,
        * otherwise the update is deferred to the next present
        */
-      VkResult ret = update_swapchain(screen, cdt, cdt->caps.currentExtent.width, cdt->caps.currentExtent.height);
+      VkResult ret = update_swapchain(screen, cdt, cdt->swapchain->scci.imageExtent.width, cdt->swapchain->scci.imageExtent.height);
       if (ret != VK_SUCCESS) {
          cdt->present_mode = old_present_mode;
          mesa_loge("zink: failed to set swap interval!");

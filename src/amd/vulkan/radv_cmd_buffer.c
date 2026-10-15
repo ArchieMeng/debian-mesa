@@ -8926,6 +8926,11 @@ radv_bind_pre_rast_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_
       cmd_buffer->state.last_first_instance = -1;
       cmd_buffer->state.last_vertex_offset_valid = false;
       cmd_buffer->state.last_drawid = -1;
+   } else if (shader->info.stage == MESA_SHADER_MESH) {
+      cmd_buffer->state.vtx_base_sgpr = 0;
+      cmd_buffer->state.vtx_emit_num = 0;
+      cmd_buffer->state.uses_drawid = false;
+      cmd_buffer->state.uses_baseinstance = false;
    }
 
    if ((shader->info.stage == MESA_SHADER_MESH) != !!(cmd_buffer->state.active_stages & VK_SHADER_STAGE_MESH_BIT_EXT)) {

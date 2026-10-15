@@ -99,6 +99,7 @@ struct dri_drawable
    bool window_valid;
 #ifdef VK_USE_PLATFORM_XCB_KHR
    xcb_special_event_t *special_event;
+   uint32_t present_eid;
 #endif
 
    /* hooks filled in by dri2 & drisw */

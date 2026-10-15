@@ -149,6 +149,10 @@ vtn_nir_alu_op_for_spirv_glsl_opcode(struct vtn_builder *b,
       default: UNREACHABLE("unhandled");
       }
    }
+   case GLSLstd450Fma:
+      if (b->options->workarounds.force_exact_glsl_fma)
+         *extra_fp_math_ctrl |= nir_fp_exact;
+      return nir_op_ffma_weak;
    case GLSLstd450Round:         return nir_op_fround_even;
    case GLSLstd450RoundEven:     return nir_op_fround_even;
    case GLSLstd450Trunc:         return nir_op_ftrunc;
@@ -171,7 +175,6 @@ vtn_nir_alu_op_for_spirv_glsl_opcode(struct vtn_builder *b,
    case GLSLstd450UMax:          return nir_op_umax;
    case GLSLstd450SMax:          return nir_op_imax;
    case GLSLstd450FMix:          return nir_op_flrp;
-   case GLSLstd450Fma:           return nir_op_ffma_weak;
    case GLSLstd450FindILsb:      return nir_op_find_lsb;
    case GLSLstd450FindSMsb:      return nir_op_ifind_msb;
    case GLSLstd450FindUMsb:      return nir_op_ufind_msb;

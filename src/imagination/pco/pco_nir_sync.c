@@ -55,6 +55,8 @@ lower_barrier(nir_builder *b, nir_intrinsic_instr *intr, void *cb_data)
    /* TODO: We might be able to re-use barrier counters. */
    unsigned counter_offset = info->shared_size;
    info->shared_size += sizeof(uint32_t);
+   unsigned sequence_offset = info->shared_size;
+   info->shared_size += sizeof(uint32_t);
    info->zero_initialize_shared_memory = true;
 
    *uses_usclib = true;
@@ -62,7 +64,10 @@ lower_barrier(nir_builder *b, nir_intrinsic_instr *intr, void *cb_data)
    unsigned num_slots = DIV_ROUND_UP(wg_size, ROGUE_MAX_INSTANCES_PER_TASK);
 
    b->cursor = nir_before_instr(&intr->instr);
-   usclib_barrier(b, nir_imm_int(b, num_slots), nir_imm_int(b, counter_offset));
+   usclib_barrier(b,
+                  nir_imm_int(b, num_slots),
+                  nir_imm_int(b, counter_offset),
+                  nir_imm_int(b, sequence_offset));
    nir_instr_remove(&intr->instr);
    return true;
 }

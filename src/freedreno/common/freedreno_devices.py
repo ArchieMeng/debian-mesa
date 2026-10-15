@@ -163,6 +163,7 @@ a6xx_gen1_low = GPUProps(
         reg_size_vec4 = 48,
         instr_cache_size = 64,
         indirect_draw_wfm_quirk = True,
+        draw_auto_stale_stride_quirk = True,
         depth_bounds_require_depth_test_quirk = True,
 
         has_gmem_fast_clear = False,
@@ -182,6 +183,7 @@ a6xx_gen1 = GPUProps(
         reg_size_vec4 = 96,
         instr_cache_size = 64,
         indirect_draw_wfm_quirk = True,
+        draw_auto_stale_stride_quirk = True,
         depth_bounds_require_depth_test_quirk = True,
     )
 
@@ -191,6 +193,7 @@ a6xx_gen2 = GPUProps(
         supports_multiview_mask = True,
         has_z24uint_s8uint = True,
         indirect_draw_wfm_quirk = True,
+        draw_auto_stale_stride_quirk = True,
         depth_bounds_require_depth_test_quirk = True, # TODO: check if true
         has_dp2acc = False, # TODO: check if true
         has_8bpp_ubwc = False,
@@ -373,7 +376,7 @@ add_gpus([
         GPUId(620),
     ], A6xxGPUInfo(
         CHIP.A6XX,
-        [a6xx_base, a6xx_gen1],
+        [a6xx_base, a6xx_gen1, GPUProps(draw_auto_stale_stride_quirk = False)],
         num_ccu = 1,
         tile_align_w = 32,
         tile_align_h = 16,
@@ -723,8 +726,8 @@ add_gpus([
 
 add_gpus([
         GPUId(702), # KGSL
-        GPUId(chip_id=0x00b207002000, name="FD702"), # QRB2210 RB1
-        GPUId(chip_id=0xffff07002000, name="FD702"), # Default no-speedbin fallback
+        GPUId(chip_id=0x00b207000200, name="FD702"), # QRB2210 RB1
+        GPUId(chip_id=0xffff07000200, name="FD702"), # Default no-speedbin fallback
         GPUId(chip_id=0xffff07000400, name="Adreno (TM) 704"),
     ], A6xxGPUInfo(
         CHIP.A6XX, # NOT a mistake!
@@ -739,6 +742,7 @@ add_gpus([
             prim_alloc_threshold = 0x1,
             storage_16bit = True,
             is_a702 = True,
+            draw_auto_stale_stride_quirk = False,
             )
         ],
         num_ccu = 1,

@@ -102,8 +102,17 @@ static unsigned get_slab_entry_alignment(struct zink_screen *screen, unsigned si
 }
 
 static void
+bo_clear_vis_vram_full(struct zink_screen *screen, struct zink_bo *bo)
+{
+   if (screen->vis_vram_full &&
+       (screen->info.mem_props.memoryTypes[bo->base.placement].propertyFlags & VK_VIS_VRAM) == VK_VIS_VRAM)
+      screen->vis_vram_full = false;
+}
+
+static void
 bo_destroy(struct zink_screen *screen, struct zink_bo *bo)
 {
+   bo_clear_vis_vram_full(screen, bo);
 #ifdef ZINK_USE_DMABUF
    if (bo->mem && !bo->u.real.use_reusable_pool) {
       simple_mtx_lock(&bo->u.real.export_lock);
@@ -170,6 +179,7 @@ bo_slab_destroy(struct zink_screen *screen, struct zink_bo *bo)
 {
    assert(!bo->mem);
 
+   bo_clear_vis_vram_full(screen, bo);
    pb_slab_free(&screen->pb.bo_slabs, &bo->u.slab.entry);
 }
 

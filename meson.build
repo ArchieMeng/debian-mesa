@@ -1959,7 +1959,7 @@ if dep_libudev.found()
   pre_args += '-DHAVE_LIBUDEV'
 endif
 
-llvm_modules = ['bitwriter', 'engine', 'mcdisassembler', 'mcjit', 'core', 'executionengine', 'scalaropts', 'transformutils', 'instcombine']
+llvm_modules = ['bitwriter', 'engine', 'mcdisassembler', 'core', 'executionengine', 'scalaropts', 'transformutils', 'instcombine']
 llvm_optional_modules = ['coroutines']
 if with_amd_vk or with_gallium_radeonsi
   llvm_modules += ['amdgpu', 'bitreader', 'ipo']
@@ -1988,6 +1988,12 @@ endif
 # ORCJIT for llvmpipe functionality.
 llvm_has_mcjit = host_machine.cpu_family() in ['aarch64', 'arm', 'mips', 'mips64', 'ppc', 'ppc64', 's390x', 'x86', 'x86_64']
 llvm_with_orcjit = get_option('llvm-orcjit') or not llvm_has_mcjit
+
+if llvm_with_orcjit
+  llvm_modules += ['orcjit']
+else
+  llvm_modules += ['mcjit']
+endif
 
 if (with_amd_vk or with_gallium_radeonsi) and amd_with_llvm
   _llvm_version = '>= 18.0.0'

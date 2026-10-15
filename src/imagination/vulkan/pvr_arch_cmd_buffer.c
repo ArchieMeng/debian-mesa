@@ -1951,7 +1951,7 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
        * every color attachment in this render.
        */
       job->samples = hw_render->sample_count;
-   } else if (cmd_buffer->state.gfx_pipeline) {
+   } else if (!dynamic_state->rs.rasterizer_discard_enable) {
       /* If the HW render pass has no color or depth/stencil attachments, we
        * determine the sample count from the count given during pipeline
        * creation.

@@ -270,6 +270,8 @@ mme_tu104_alu_op_may_depend_on_mthd(enum mme_tu104_alu_op op)
    switch (op) {
    case MME_TU104_ALU_OP_EXTENDED:
    case MME_TU104_ALU_OP_STATE:
+   case MME_TU104_ALU_OP_DREAD:
+   case MME_TU104_ALU_OP_DWRITE:
       return true;
    default:
       return false;

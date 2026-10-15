@@ -528,6 +528,7 @@ radv_shader_spirv_to_nir(const struct radv_compiler_info *compiler_info, struct 
                .force_ssbo_non_uniform = compiler_info->key.ssbo_non_uniform,
                .lower_terminate_to_discard = compiler_info->key.lower_terminate_to_discard,
                .force_nan_preserve_min_max = compiler_info->key.force_nan_preserve_min_max,
+               .force_exact_glsl_fma = compiler_info->key.force_exact_glsl_fma,
             },
          .emit_debug_break = compiler_info->debug.trap_enabled,
          .debug_info = compiler_info->key.nir_debug_info,

@@ -36,9 +36,16 @@
 #include "tgsi/tgsi_ureg.h"
 #include "tgsi/tgsi_util.h"
 #include "util/u_debug.h"
+#include "util/u_endian.h"
 #include "util/u_math.h"
 #include "util/u_memory.h"
 #include "util/u_dynarray.h"
+
+/* Low and high halves of the 64-bit value in X/Y. The one in Z/W is two
+ * channels up. tgsi_exec reads each pair in memory order.
+ */
+#define NTT_LO64 (UTIL_ARCH_BIG_ENDIAN ? TGSI_SWIZZLE_Y : TGSI_SWIZZLE_X)
+#define NTT_HI64 (UTIL_ARCH_BIG_ENDIAN ? TGSI_SWIZZLE_X : TGSI_SWIZZLE_Y)
 
 struct ntt_insn {
    enum tgsi_opcode opcode;
@@ -244,9 +251,11 @@ ntt_64bit_write_mask(unsigned write_mask)
 static struct ureg_src
 ntt_64bit_1f(struct ntt_compile *c)
 {
-   return ureg_imm4u(c->ureg,
-                     0x00000000, 0x3ff00000,
-                     0x00000000, 0x3ff00000);
+   static const double one[2] = { 1.0, 1.0 };
+   uint32_t values[4];
+
+   memcpy(values, one, sizeof(one));
+   return ureg_DECL_immediate_uint(c->ureg, values, 4);
 }
 
 /* Per-channel masks of def/use within the block, and the per-channel
@@ -1182,10 +1191,8 @@ ntt_get_load_const_src(struct ntt_compile *c, nir_load_const_instr *instr)
       } else {
          uint32_t values[4];
          assert(num_components <= 2);
-         for (int i = 0; i < num_components; i++) {
-            values[i * 2 + 0] = instr->value[i].u64 & 0xffffffff;
-            values[i * 2 + 1] = instr->value[i].u64 >> 32;
-         }
+         for (int i = 0; i < num_components; i++)
+            memcpy(&values[i * 2], &instr->value[i].u64, sizeof(uint64_t));
          num_components *= 2;
          return ureg_DECL_immediate_uint(c->ureg, values, num_components);
       }
@@ -1607,15 +1614,16 @@ ntt_emit_alu(struct ntt_compile *c, nir_alu_instr *instr)
          ntt_AND(c, dst, ureg_swizzle(src[0],
                                              TGSI_SWIZZLE_X, TGSI_SWIZZLE_X,
                                              TGSI_SWIZZLE_Y, TGSI_SWIZZLE_Y),
-                  ureg_imm4u(c->ureg, ~0, 0, ~0, 0));
+                  UTIL_ARCH_BIG_ENDIAN ? ureg_imm4u(c->ureg, 0, ~0, 0, ~0) :
+                                         ureg_imm4u(c->ureg, ~0, 0, ~0, 0));
          break;
 
       case nir_op_i2i32:
       case nir_op_u2u32:
          assert(src_64);
          ntt_MOV(c, dst, ureg_swizzle(src[0],
-                                             TGSI_SWIZZLE_X, TGSI_SWIZZLE_Z,
-                                             TGSI_SWIZZLE_X, TGSI_SWIZZLE_X));
+                                             NTT_LO64, NTT_LO64 + 2,
+                                             NTT_LO64, NTT_LO64));
          break;
 
       case nir_op_fabs:
@@ -1696,7 +1704,8 @@ ntt_emit_alu(struct ntt_compile *c, nir_alu_instr *instr)
                   ureg_swizzle(src[0],
                                TGSI_SWIZZLE_X, TGSI_SWIZZLE_X,
                                TGSI_SWIZZLE_Y, TGSI_SWIZZLE_Y),
-                  ureg_imm4u(c->ureg, 1, 0, 1, 0));
+                  UTIL_ARCH_BIG_ENDIAN ? ureg_imm4u(c->ureg, 0, 1, 0, 1) :
+                                         ureg_imm4u(c->ureg, 1, 0, 1, 0));
          break;
 
       case nir_op_fsin:
@@ -1730,11 +1739,13 @@ ntt_emit_alu(struct ntt_compile *c, nir_alu_instr *instr)
          break;
 
       case nir_op_pack_64_2x32_split:
-         ntt_MOV(c, ureg_writemask(dst, TGSI_WRITEMASK_XZ),
+         ntt_MOV(c, ureg_writemask(dst, UTIL_ARCH_BIG_ENDIAN ?
+                                        TGSI_WRITEMASK_YW : TGSI_WRITEMASK_XZ),
                   ureg_swizzle(src[0],
                                TGSI_SWIZZLE_X, TGSI_SWIZZLE_X,
                                TGSI_SWIZZLE_Y, TGSI_SWIZZLE_Y));
-         ntt_MOV(c, ureg_writemask(dst, TGSI_WRITEMASK_YW),
+         ntt_MOV(c, ureg_writemask(dst, UTIL_ARCH_BIG_ENDIAN ?
+                                        TGSI_WRITEMASK_XZ : TGSI_WRITEMASK_YW),
                   ureg_swizzle(src[1],
                                TGSI_SWIZZLE_X, TGSI_SWIZZLE_X,
                                TGSI_SWIZZLE_Y, TGSI_SWIZZLE_Y));
@@ -1742,14 +1753,14 @@ ntt_emit_alu(struct ntt_compile *c, nir_alu_instr *instr)
 
       case nir_op_unpack_64_2x32_split_x:
          ntt_MOV(c, dst, ureg_swizzle(src[0],
-                                             TGSI_SWIZZLE_X, TGSI_SWIZZLE_Z,
-                                             TGSI_SWIZZLE_X, TGSI_SWIZZLE_Z));
+                                             NTT_LO64, NTT_LO64 + 2,
+                                             NTT_LO64, NTT_LO64 + 2));
          break;
 
       case nir_op_unpack_64_2x32_split_y:
          ntt_MOV(c, dst, ureg_swizzle(src[0],
-                                             TGSI_SWIZZLE_Y, TGSI_SWIZZLE_W,
-                                             TGSI_SWIZZLE_Y, TGSI_SWIZZLE_W));
+                                             NTT_HI64, NTT_HI64 + 2,
+                                             NTT_HI64, NTT_HI64 + 2));
          break;
 
       case nir_op_b32csel:

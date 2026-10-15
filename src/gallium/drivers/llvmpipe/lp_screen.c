@@ -897,9 +897,13 @@ lp_disk_cache_create(struct llvmpipe_screen *screen)
    char cache_id[BLAKE3_HEX_LEN];
    _mesa_blake3_init(&ctx);
 
-   if (!disk_cache_get_function_identifier(lp_disk_cache_create, &ctx) ||
-       !disk_cache_get_function_identifier(LLVMLinkInMCJIT, &ctx))
+   if (!disk_cache_get_function_identifier(lp_disk_cache_create, &ctx))
       return;
+
+#if !GALLIVM_USE_ORCJIT
+   if (!disk_cache_get_function_identifier(LLVMLinkInMCJIT, &ctx))
+      return;
+#endif
 
    _mesa_blake3_update(&ctx, &gallivm_perf, sizeof(gallivm_perf));
    update_cache_blake3_cpu(&ctx);

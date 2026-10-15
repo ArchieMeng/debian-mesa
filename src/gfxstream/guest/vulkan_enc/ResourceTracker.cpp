@@ -1802,6 +1802,7 @@ VkResult ResourceTracker::on_vkEnumerateDeviceExtensionProperties(
         "VK_EXT_depth_clip_enable",
         "VK_KHR_create_renderpass2",
         "VK_KHR_vertex_attribute_divisor",
+        "VK_EXT_vertex_attribute_divisor",
         "VK_EXT_host_query_reset",
         "VK_EXT_blend_operation_advanced",
         "VK_EXT_frame_boundary",

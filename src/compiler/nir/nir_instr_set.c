@@ -324,7 +324,7 @@ pack_tex(const nir_tex_instr *instr)
 static uint32_t
 hash_tex(uint32_t hash, const nir_tex_instr *instr)
 {
-   uint8_t v[24];
+   uint8_t v[28];
    uint32_t packed = pack_tex(instr);
    memcpy(v, &packed, 4);
    STATIC_ASSERT(sizeof(instr->tg4_offsets) == 8);
@@ -332,9 +332,11 @@ hash_tex(uint32_t hash, const nir_tex_instr *instr)
    uint32_t texture_index = instr->texture_index;
    uint32_t sampler_index = instr->sampler_index;
    uint32_t backend_flags = instr->backend_flags;
+   uint32_t dest = (instr->def.num_components << 8) | instr->dest_type;
    memcpy(v + 12, &texture_index, 4);
    memcpy(v + 16, &sampler_index, 4);
    memcpy(v + 20, &backend_flags, 4);
+   memcpy(v + 24, &dest, 4);
    hash = XXH32(v, sizeof(v), hash);
 
    for (unsigned i = 0; i < instr->num_srcs; i++)
@@ -705,7 +707,9 @@ nir_instrs_equal(const nir_instr *instr1, const nir_instr *instr2)
 
       if (tex1->texture_index != tex2->texture_index ||
           tex1->sampler_index != tex2->sampler_index ||
-          tex1->backend_flags != tex2->backend_flags)
+          tex1->backend_flags != tex2->backend_flags ||
+          tex1->def.num_components != tex2->def.num_components ||
+          tex1->dest_type != tex2->dest_type)
          return false;
 
       return true;

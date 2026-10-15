@@ -541,7 +541,7 @@ fd5_program_emit(struct fd_context *ctx, struct fd_ringbuffer *ring,
          A5XX_HLSQ_CONTROL_3_REG_IJ_LINEAR_PIXEL(ij_regid[IJ_LINEAR_PIXEL]) |
          A5XX_HLSQ_CONTROL_3_REG_IJ_PERSP_CENTROID(
             ij_regid[IJ_PERSP_CENTROID]) |
-         A5XX_HLSQ_CONTROL_3_REG_IJ_PERSP_CENTROID(
+         A5XX_HLSQ_CONTROL_3_REG_IJ_LINEAR_CENTROID(
             ij_regid[IJ_LINEAR_CENTROID]));
    OUT_RING(
       ring,

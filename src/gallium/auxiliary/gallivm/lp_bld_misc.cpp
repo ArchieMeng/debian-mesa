@@ -317,7 +317,7 @@ void
 lp_build_fill_mattrs(std::vector<std::string> &MAttrs)
 {
 
-#if DETECT_ARCH_ARM
+#if DETECT_ARCH_ARM || DETECT_ARCH_AARCH64
    /* llvm-3.3+ implements sys::getHostCPUFeatures for Arm,
     * which allows us to enable/disable code generation based
     * on the results of cpuid on these architectures.
@@ -378,7 +378,7 @@ lp_build_fill_mattrs(std::vector<std::string> &MAttrs)
    MAttrs.push_back(util_get_cpu_caps()->has_avx512vl ? "+avx512vl"  : "-avx512vl");
    MAttrs.push_back(util_get_cpu_caps()->has_avx512vbmi ? "+avx512vbmi"  : "-avx512vbmi");
 #endif
-#if DETECT_ARCH_ARM
+#if DETECT_ARCH_ARM || DETECT_ARCH_AARCH64
    if (!util_get_cpu_caps()->has_neon) {
       MAttrs.push_back("-neon");
       MAttrs.push_back("-crypto");

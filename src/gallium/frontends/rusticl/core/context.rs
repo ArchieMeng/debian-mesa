@@ -369,7 +369,7 @@ impl Context {
 
         let address = ptr as u64;
         let mut buffers = HashMap::new();
-        for &dev in &self.devs {
+        for dev in self.svm_devs() {
             let size: u32 = size.get().try_into().map_err(|_| CL_OUT_OF_HOST_MEMORY)?;
 
             // For system SVM devices we simply create a userptr resource.
@@ -681,6 +681,10 @@ impl Context {
     pub fn flush_gl_mem_objects(&self, mem_objects: &[Mem]) -> CLResult<Option<FenceFd>> {
         let gl_ctx = self.gl_ctx_manager.as_ref().ok_or(CL_INVALID_CONTEXT)?;
         gl_ctx.flush(mem_objects)
+    }
+
+    fn svm_devs(&self) -> impl Iterator<Item = &'static Device> + use<'_> {
+        self.devs.iter().filter(|dev| dev.svm_supported()).copied()
     }
 }
 

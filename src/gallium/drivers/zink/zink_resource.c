@@ -1156,8 +1156,10 @@ allocate_bo(struct zink_screen *screen, const struct pipe_resource *templ,
    }
 
    while (1) {
+      bool small_bar = heap == ZINK_HEAP_DEVICE_LOCAL_VISIBLE && !screen->resizable_bar;
+      bool skip = small_bar && screen->vis_vram_full;
       /* iterate over all available memory types to reduce chance of oom */
-      for (unsigned i = 0; !obj->bo && i < screen->heap_count[heap]; i++) {
+      for (unsigned i = 0; !skip && !obj->bo && i < screen->heap_count[heap]; i++) {
          if (!(reqs->memoryTypeBits & BITFIELD_BIT(screen->heap_map[heap][i])))
             continue;
 
@@ -1168,8 +1170,12 @@ allocate_bo(struct zink_screen *screen, const struct pipe_resource *templ,
       if (obj->bo || heap != ZINK_HEAP_DEVICE_LOCAL_VISIBLE)
          break;
 
+      if (small_bar && !skip && reqs->size <= 2 * 1024 * 1024)
+         screen->vis_vram_full = true;
+
       /* demote BAR allocations to a different heap on failure to avoid oom */
-      if (templ->flags & PIPE_RESOURCE_FLAG_MAP_COHERENT || templ->usage == PIPE_USAGE_DYNAMIC)
+      if (templ->flags & PIPE_RESOURCE_FLAG_MAP_COHERENT || templ->usage == PIPE_USAGE_DYNAMIC ||
+          templ->bind & ZINK_BIND_DESCRIPTOR)
           heap = ZINK_HEAP_HOST_VISIBLE_COHERENT;
       else
           heap = ZINK_HEAP_DEVICE_LOCAL;

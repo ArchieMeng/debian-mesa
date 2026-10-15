@@ -58,6 +58,8 @@ struct kopper_swapchain {
    struct kopper_swapchain *next;
    VkSwapchainKHR swapchain;
 
+   simple_mtx_t lock;
+
    unsigned last_present;
    unsigned num_images;
    uint32_t last_present_prune;
@@ -183,7 +185,7 @@ zink_kopper_fixup_depth_buffer(struct zink_context *ctx);
 bool
 zink_kopper_check(struct pipe_resource *pres);
 void
-zink_kopper_set_swap_interval(struct pipe_screen *pscreen, struct pipe_resource *pres, int interval);
+zink_kopper_set_swap_interval(struct pipe_context *pctx, struct pipe_resource *pres, int interval);
 int
 zink_kopper_query_buffer_age(struct pipe_context *pctx, struct pipe_resource *pres);
 void

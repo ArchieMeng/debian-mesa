@@ -1646,6 +1646,8 @@ zink_destroy_screen(struct pipe_screen *pscreen)
       VKSCR(DestroySemaphore)(screen->dev, util_dynarray_pop(&screen->semaphores, VkSemaphore), NULL);
    while (util_dynarray_contains(&screen->fd_semaphores, VkSemaphore))
       VKSCR(DestroySemaphore)(screen->dev, util_dynarray_pop(&screen->fd_semaphores, VkSemaphore), NULL);
+   util_dynarray_fini(&screen->semaphores);
+   util_dynarray_fini(&screen->fd_semaphores);
    if (screen->bindless_layout)
       VKSCR(DestroyDescriptorSetLayout)(screen->dev, screen->bindless_layout, NULL);
 
@@ -1912,7 +1914,8 @@ zink_flush_frontbuffer(struct pipe_screen *pscreen,
 
    if (!zink_kopper_acquired(res->obj->dt, res->obj->dt_idx)) {
       /* swapbuffers to an undefined surface: acquire and present garbage */
-      zink_kopper_acquire(ctx, res, UINT64_MAX);
+      if (!zink_kopper_acquire(ctx, res, UINT64_MAX))
+         return;
       zink_resource_reference(&ctx->needs_present, res);
       /* set batch usage to submit acquire semaphore */
       zink_batch_resource_usage_set(ctx->bs, res, true, false);
@@ -2225,11 +2228,13 @@ retry:
       }
 
       if (screen->info.have_EXT_image_drm_format_modifier && mod_props.drmFormatModifierCount) {
+         simple_mtx_lock(&screen->ralloc_lock);
          /* The A8_UNORM workaround below can retry this query for the same pformat. */
          ralloc_free(screen->modifier_props[pformat].pDrmFormatModifierProperties);
 
          screen->modifier_props[pformat].drmFormatModifierCount = mod_props.drmFormatModifierCount;
          screen->modifier_props[pformat].pDrmFormatModifierProperties = ralloc_array(screen, VkDrmFormatModifierPropertiesEXT, mod_props.drmFormatModifierCount);
+         simple_mtx_unlock(&screen->ralloc_lock);
          if (mod_props.pDrmFormatModifierProperties) {
             for (unsigned j = 0; j < mod_props.drmFormatModifierCount; j++)
                screen->modifier_props[pformat].pDrmFormatModifierProperties[j] = mod_props.pDrmFormatModifierProperties[j];
@@ -3406,6 +3411,7 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
 
    screen->driver_name_is_inferred = config && config->driver_name_is_inferred;
    screen->drm_fd = -1;
+   simple_mtx_init(&screen->ralloc_lock, mtx_plain);
 
    glsl_type_singleton_init_or_ref();
    zink_debug = debug_get_option_zink_debug();
@@ -3803,14 +3809,15 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
    }
 
    simple_mtx_init(&screen->free_batch_states_lock, mtx_plain);
+   simple_mtx_init(&screen->submit_lock, mtx_plain);
    simple_mtx_init(&screen->active_batch_states_lock, mtx_plain);
    simple_mtx_init(&screen->dt_lock, mtx_plain);
 
    util_idalloc_mt_init_tc(&screen->buffer_ids);
 
    simple_mtx_init(&screen->semaphores_lock, mtx_plain);
-   util_dynarray_init(&screen->semaphores, screen);
-   util_dynarray_init(&screen->fd_semaphores, screen);
+   util_dynarray_init(&screen->semaphores, NULL);
+   util_dynarray_init(&screen->fd_semaphores, NULL);
 
    util_vertex_state_cache_init(&screen->vertex_state_cache,
                                 zink_create_vertex_state, zink_vertex_state_destroy);

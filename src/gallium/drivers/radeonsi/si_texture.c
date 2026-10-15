@@ -1161,7 +1161,8 @@ static struct si_texture *si_texture_create_object(struct pipe_screen *screen,
        *
        * Sparse textures don't have any backing storage at this point.
        */
-      if (!(base->flags & PIPE_RESOURCE_FLAG_SPARSE))
+      if (!(base->flags & PIPE_RESOURCE_FLAG_SPARSE) &&
+          !(surface->flags & RADEON_SURF_IMPORTED))
          si_set_tex_bo_metadata(sscreen, tex);
       return tex;
    }

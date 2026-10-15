@@ -287,6 +287,13 @@ pass(jay_function *func)
          postra_liveness_ins(live, I);
       }
 
+      /* If there are no candidates, there's nothing to do.
+       *
+       * Also avoids potential UB from calling qsort with a null pointer.
+       */
+      if (candidates.size == 0)
+         continue;
+
       qsort(candidates.data,
             util_dynarray_num_elements(&candidates, struct candidate),
             sizeof(struct candidate), cmp_candidates);

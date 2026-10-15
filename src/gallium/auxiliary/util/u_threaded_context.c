@@ -786,6 +786,7 @@ _tc_sync(struct threaded_context *tc, UNUSED const char *info, UNUSED const char
          tc->renderpass_info_recording->data32[0] = 0;
       }
       tc->renderpass_info_recording->ended = false;
+      tc_batch_rp_info(tc->renderpass_info_recording)->end_call = NULL;
       tc->seen_fb_state = false;
       tc->query_ended = false;
    }
@@ -885,31 +886,31 @@ tc_add_shader_bindings_to_buffer_list(struct threaded_context *tc,
 
 static unsigned
 tc_rebind_shader_bindings(struct threaded_context *tc, uint32_t old_id,
-                          uint32_t new_id, mesa_shader_stage shader, uint32_t *rebind_mask)
+                          uint32_t new_id, mesa_shader_stage shader, uint64_t *rebind_mask)
 {
    unsigned ubo = 0, ssbo = 0, img = 0, sampler = 0;
 
    ubo = tc_rebind_bindings(old_id, new_id, tc->const_buffers[shader],
                             tc->max_const_buffers);
    if (ubo)
-      *rebind_mask |= BITFIELD_BIT(TC_BINDING_UBO_VS) << shader;
+      *rebind_mask |= BITFIELD64_BIT(TC_BINDING_UBO_VS) << shader;
    if (tc->seen_shader_buffers[shader]) {
       ssbo = tc_rebind_bindings(old_id, new_id, tc->shader_buffers[shader],
                                 tc->max_shader_buffers);
       if (ssbo)
-         *rebind_mask |= BITFIELD_BIT(TC_BINDING_SSBO_VS) << shader;
+         *rebind_mask |= BITFIELD64_BIT(TC_BINDING_SSBO_VS) << shader;
    }
    if (tc->seen_image_buffers[shader]) {
       img = tc_rebind_bindings(old_id, new_id, tc->image_buffers[shader],
                                tc->max_images);
       if (img)
-         *rebind_mask |= BITFIELD_BIT(TC_BINDING_IMAGE_VS) << shader;
+         *rebind_mask |= BITFIELD64_BIT(TC_BINDING_IMAGE_VS) << shader;
    }
    if (tc->seen_sampler_buffers[shader]) {
       sampler = tc_rebind_bindings(old_id, new_id, tc->sampler_buffers[shader],
                                    tc->max_samplers);
       if (sampler)
-         *rebind_mask |= BITFIELD_BIT(TC_BINDING_SAMPLERVIEW_VS) << shader;
+         *rebind_mask |= BITFIELD64_BIT(TC_BINDING_SAMPLERVIEW_VS) << shader;
    }
    return ubo + ssbo + img + sampler;
 }
@@ -972,20 +973,20 @@ tc_add_all_mesh_bindings_to_buffer_list(struct threaded_context *tc)
 }
 
 static unsigned
-tc_rebind_buffer(struct threaded_context *tc, uint32_t old_id, uint32_t new_id, uint32_t *rebind_mask)
+tc_rebind_buffer(struct threaded_context *tc, uint32_t old_id, uint32_t new_id, uint64_t *rebind_mask)
 {
    unsigned vbo = 0, so = 0;
 
    vbo = tc_rebind_bindings(old_id, new_id, tc->vertex_buffers,
                             tc->num_vertex_buffers);
    if (vbo)
-      *rebind_mask |= BITFIELD_BIT(TC_BINDING_VERTEX_BUFFER);
+      *rebind_mask |= BITFIELD64_BIT(TC_BINDING_VERTEX_BUFFER);
 
    if (tc->seen_streamout_buffers) {
       so = tc_rebind_bindings(old_id, new_id, tc->streamout_buffers,
                               PIPE_MAX_SO_BUFFERS);
       if (so)
-         *rebind_mask |= BITFIELD_BIT(TC_BINDING_STREAMOUT_BUFFER);
+         *rebind_mask |= BITFIELD64_BIT(TC_BINDING_STREAMOUT_BUFFER);
    }
    unsigned rebound = vbo + so;
 
@@ -1000,6 +1001,8 @@ tc_rebind_buffer(struct threaded_context *tc, uint32_t old_id, uint32_t new_id, 
       rebound += tc_rebind_shader_bindings(tc, old_id, new_id, MESA_SHADER_GEOMETRY, rebind_mask);
 
    rebound += tc_rebind_shader_bindings(tc, old_id, new_id, MESA_SHADER_COMPUTE, rebind_mask);
+   rebound += tc_rebind_shader_bindings(tc, old_id, new_id, MESA_SHADER_TASK, rebind_mask);
+   rebound += tc_rebind_shader_bindings(tc, old_id, new_id, MESA_SHADER_MESH, rebind_mask);
 
    if (rebound)
       BITSET_SET(tc->buffer_lists[tc->next_buf_list].buffer_list, new_id & TC_BUFFER_ID_MASK);
@@ -2542,7 +2545,7 @@ tc_flush(struct pipe_context *_pipe, struct pipe_fence_handle **fence,
 struct tc_replace_buffer_storage {
    struct tc_call_base base;
    uint16_t num_rebinds;
-   uint32_t rebind_mask;
+   uint64_t rebind_mask;
    uint32_t delete_buffer_id;
    struct pipe_resource *dst;
    struct pipe_resource *src;
@@ -3332,7 +3335,7 @@ tc_texture_subdata(struct pipe_context *_pipe,
           tc->options.parse_renderpass_info && tc->in_renderpass) {
          /* upload to staging buffer and then buf2img copy */
          struct pipe_resource *pres = pipe_buffer_create(pipe->screen, 0, PIPE_USAGE_STREAM, layer_stride * box->depth);
-         pipe->buffer_subdata(pipe, pres, unsync_usage, 0, layer_stride * box->depth, data);
+         tc->base.buffer_subdata(&tc->base, pres, 0, 0, size, data);
          tc->base.image_copy_buffer(&tc->base, resource, pres, 0, stride, layer_stride, level, box);
          pipe_resource_reference(&pres, NULL);
       } else {

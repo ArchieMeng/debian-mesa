@@ -658,7 +658,8 @@ radv_get_htile_mask(struct radv_cmd_buffer *cmd_buffer, const struct radv_image 
          if (aspects & VK_IMAGE_ASPECT_DEPTH_BIT) {
             mask |= HTILE_ZS_CODE(.zmask = 0xF,
                                   .zdelta = 0x3F,
-                                  .zbase = 0x3FFF);
+                                  .zbase = 0x3FFF,
+                                  .unused = 0x3);
          }
          if (aspects & VK_IMAGE_ASPECT_STENCIL_BIT) {
             mask |= HTILE_ZS_CODE(.sr0 = 0x3,

@@ -167,6 +167,9 @@ nvkmd_nouveau_exec_ctx_exec(struct nvkmd_ctx *_ctx,
                             uint32_t exec_count,
                             const struct nvkmd_ctx_exec *execs)
 {
+   if (exec_count == 0)
+      return VK_SUCCESS;
+
    struct nvkmd_nouveau_exec_ctx *ctx = nvkmd_nouveau_exec_ctx(_ctx);
    const uint32_t size_needed = MIN2(
       ctx->req_push.size + exec_count * sizeof(struct drm_nouveau_exec_push),

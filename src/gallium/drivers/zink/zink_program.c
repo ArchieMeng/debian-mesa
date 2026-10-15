@@ -1361,9 +1361,10 @@ gfx_program_init(struct zink_context *ctx, struct zink_gfx_program *prog)
       if (prog->shaders[i]) {
          util_queue_fence_wait(&prog->shaders[i]->precompile.fence);
          /* this may have already been precompiled for separate shader */
-         if (prog->shaders[i]->info.stage == MESA_SHADER_TESS_CTRL && prog->shaders[i]->non_fs.is_generated && prog->shaders[MESA_SHADER_TESS_CTRL]->nir)
+         if (prog->shaders[i]->info.stage == MESA_SHADER_TESS_CTRL && prog->shaders[i]->non_fs.is_generated && prog->shaders[MESA_SHADER_TESS_CTRL]->nir) {
             zink_shader_tcs_init(screen, prog->shaders[MESA_SHADER_TESS_CTRL], nir[MESA_SHADER_TESS_EVAL], &nir[i]);
-         else
+            prog->shaders[MESA_SHADER_TESS_CTRL]->nir = NULL;
+         } else
             nir[i] = zink_shader_deserialize(screen, prog->shaders[i]);
       } else {
          nir[i] = NULL;

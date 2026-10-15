@@ -3218,6 +3218,7 @@ iris_compile_cs(struct iris_screen *screen,
 
    if (program == NULL) {
       dbg_printf("Failed to compile compute shader: %s\n", error);
+      ralloc_free(mem_ctx);
 
       shader->compilation_failed = true;
       util_queue_fence_signal(&shader->ready);

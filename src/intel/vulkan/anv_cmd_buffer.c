@@ -419,6 +419,7 @@ anv_cmd_buffer_update_pending_query_bits(struct anv_cmd_buffer *cmd_buffer,
 {
    clear_pending_query_bits(&cmd_buffer->state.queries.clear_bits, flushed_bits);
    clear_pending_query_bits(&cmd_buffer->state.queries.buffer_write_bits, flushed_bits);
+   clear_pending_query_bits(&cmd_buffer->state.queries.copy_bits, flushed_bits);
 }
 
 static bool
@@ -542,26 +543,6 @@ update_push_descriptor_flags(struct anv_cmd_pipeline_state *state,
    }
 }
 
-static bool
-maybe_update_dynamic_buffers_indices(struct anv_cmd_pipeline_state *state,
-                                     const uint8_t *offsets)
-{
-   struct anv_push_constants *push = &state->push_constants;
-
-   bool modified = false;
-   for (uint32_t i = 0; i < MAX_SETS; i++) {
-      if ((push->desc_surface_offsets[i] &
-           ANV_DESCRIPTOR_SET_DYNAMIC_INDEX_MASK) !=
-          offsets[i]) {
-         push->desc_surface_offsets[i] &= ~ANV_DESCRIPTOR_SET_DYNAMIC_INDEX_MASK;
-         push->desc_surface_offsets[i] |= offsets[i];
-         modified = true;
-      }
-   }
-
-   return modified;
-}
-
 static struct anv_cmd_pipeline_state *
 anv_cmd_buffer_get_pipeline_layout_state(struct anv_cmd_buffer *cmd_buffer,
                                          VkPipelineBindPoint bind_point,
@@ -656,24 +637,26 @@ anv_cmd_buffer_bind_descriptor_set(struct anv_cmd_buffer *cmd_buffer,
          anv_cmd_buffer_dirty_descriptors(cmd_buffer, stages, "push descriptor bind");
          cmd_buffer->state.descriptor_buffers.offsets_dirty |= stages;
       } else {
-         /* Plaforms with LSC will use descriptor buffer push constant
-          * offsets, also with device generated commands, shaders are much
-          * more likely to access the offset on pre-LSC platforms.
-          */
-         bool update_desc_sets = cmd_buffer->device->vk.enabled_features.deviceGeneratedCommands ||
-                                 cmd_buffer->device->info->has_lsc;
+         struct anv_push_constants *push = &pipe_state->push_constants;
+         uint64_t offset =
+            anv_address_physical(set->desc_surface_addr) -
+            anv_physical_device_get_internal_surface_state_pool_va(cmd_buffer->device->physical)->addr;
+         assert((offset & ~ANV_DESCRIPTOR_SET_OFFSET_MASK) == 0);
 
-         if (update_desc_sets) {
-            struct anv_push_constants *push = &pipe_state->push_constants;
-            uint64_t offset =
-               anv_address_physical(set->desc_surface_addr) -
-               anv_physical_device_get_internal_surface_state_pool_va(cmd_buffer->device->physical)->addr;
-            assert((offset & ~ANV_DESCRIPTOR_SET_OFFSET_MASK) == 0);
-            push->desc_surface_offsets[set_index] &= ~ANV_DESCRIPTOR_SET_OFFSET_MASK;
-            push->desc_surface_offsets[set_index] |= offset;
-            push->desc_sampler_offsets[set_index] =
-               anv_address_physical(set->desc_sampler_addr) -
-               anv_physical_device_get_dynamic_state_pool_va(cmd_buffer->device->physical)->addr;
+         uint32_t dynamic_desc_count = 0;
+         for (uint32_t i = 0; i < ARRAY_SIZE(pipe_state->descriptors); i++) {
+            if (i == set_index) {
+               push->desc_surface_offsets[set_index] = offset;
+               push->desc_sampler_offsets[set_index] =
+                  anv_address_physical(set->desc_sampler_addr) -
+                  anv_physical_device_get_dynamic_state_pool_va(cmd_buffer->device->physical)->addr;
+            }
+
+            push->desc_surface_offsets[i] &= ~ANV_DESCRIPTOR_SET_DYNAMIC_INDEX_MASK;
+            push->desc_surface_offsets[i] |= dynamic_desc_count;
+
+            if (pipe_state->descriptors[i])
+               dynamic_desc_count += pipe_state->descriptors[i]->layout->vk.dynamic_descriptor_count;
          }
       }
 
@@ -1351,12 +1334,6 @@ anv_cmd_buffer_set_rt_state(struct vk_command_buffer *vk_cmd_buffer,
       anv_cmd_buffer_set_rt_query_buffer(cmd_buffer, &rt->base, ray_queries,
                                          ANV_RT_STAGE_BITS);
    }
-
-   if (maybe_update_dynamic_buffers_indices(&rt->base,
-                                            dynamic_descriptor_offsets)) {
-      cmd_buffer->state.push_constants_dirty |= ANV_RT_STAGE_BITS;
-      rt->base.push_constants_data_dirty = true;
-   }
 }
 
 void
@@ -1800,18 +1777,6 @@ bind_graphics_shaders(struct anv_cmd_buffer *cmd_buffer,
    update_push_descriptor_flags(&gfx->base,
                                 cmd_buffer->state.gfx.shaders,
                                 ARRAY_SIZE(cmd_buffer->state.gfx.shaders));
-
-   uint8_t dynamic_descriptor_count = 0;
-   uint8_t dynamic_descriptor_offsets[MAX_SETS] = {};
-   for (uint32_t i = 0; i < MAX_SETS; i++) {
-      dynamic_descriptor_offsets[i] = dynamic_descriptor_count;
-      dynamic_descriptor_count += dynamic_descriptors[i];
-   }
-   if (maybe_update_dynamic_buffers_indices(&gfx->base,
-                                            dynamic_descriptor_offsets)) {
-      cmd_buffer->state.push_constants_dirty |= gfx->active_stages;
-      gfx->base.push_constants_data_dirty = true;
-   }
 
    if (ray_queries > 0) {
       assert(cmd_buffer->device->info->verx10 >= 125);

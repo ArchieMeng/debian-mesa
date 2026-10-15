@@ -91,6 +91,12 @@ etna_resource_is_render_compatible(struct pipe_screen *pscreen,
 {
    struct etna_screen *screen = etna_screen(pscreen);
 
+   /* The resource the DRI frontend creates for an external TS plane has no
+    * format and is never rendered to.
+    */
+   if (rsc->base.format == PIPE_FORMAT_NONE)
+      return false;
+
    if (rsc->layout == ETNA_LAYOUT_LINEAR) {
       if (!VIV_FEATURE(screen, ETNA_FEATURE_LINEAR_PE))
          return false;
