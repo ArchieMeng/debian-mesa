@@ -2244,7 +2244,7 @@ brw_preprocess_nir(const struct brw_compiler *compiler, nir_shader *nir,
 
    brw_nir_optimize(pt);
 
-   if (nir->info.ray_queries) {
+   if (devinfo->has_ray_tracing) {
       OPT(nir_opt_ray_queries);
       OPT(nir_opt_ray_query_ranges);
    }

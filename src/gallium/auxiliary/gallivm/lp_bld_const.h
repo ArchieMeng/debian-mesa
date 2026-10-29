@@ -120,10 +120,28 @@ lp_build_const_mask_aos_swizzled(struct gallivm_state *gallivm,
                                  const unsigned char *swizzle);
 
 
+/**
+ * Build an integer constant from the low bits of a value.
+ *
+ * LLVMConstInt() asserts that the value fits the type, as a signed or as an
+ * unsigned number depending on its last argument. Use this where the value is
+ * a bit pattern, or may be negative for an unsigned type.
+ */
+static inline LLVMValueRef
+lp_build_const_int_trunc(LLVMTypeRef int_type, uint64_t val)
+{
+   unsigned width = LLVMGetIntTypeWidth(int_type);
+
+   if (width < 8 * sizeof(val))
+      val &= (1ULL << width) - 1;
+
+   return LLVMConstInt(int_type, val, 0);
+}
+
 static inline LLVMValueRef
 lp_build_const_int32(struct gallivm_state *gallivm, int i)
 {
-   return LLVMConstInt(LLVMInt32TypeInContext(gallivm->context), i, 0);
+   return lp_build_const_int_trunc(LLVMInt32TypeInContext(gallivm->context), i);
 }
 
 static inline LLVMValueRef

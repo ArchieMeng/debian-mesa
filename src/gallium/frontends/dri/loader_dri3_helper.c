@@ -561,7 +561,11 @@ dri3_handle_present_event(struct loader_dri3_drawable *draw,
       for (b = 0; b < ARRAY_SIZE(draw->buffers); b++) {
          struct loader_dri3_buffer *buf = draw->buffers[b];
 
-         if (buf && buf->pixmap == ie->pixmap)
+         /* Match both client pixmap and our fence so we handle disconnects
+          * correctly
+          */
+         if (buf && buf->pixmap == ie->pixmap &&
+             buf->sync_fence == ie->idle_fence)
             buf->busy = 0;
       }
       break;

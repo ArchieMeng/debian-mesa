@@ -401,8 +401,10 @@ dri2_initialize_surfaceless(_EGLDisplay *disp)
 
    dri2_setup_screen(disp);
 #ifdef HAVE_WAYLAND_PLATFORM
-   dri2_dpy->device_name =
-      loader_get_device_name_for_fd(dri2_dpy->fd_render_gpu);
+   if (dri2_dpy->fd_render_gpu >= 0) {
+      dri2_dpy->device_name =
+         loader_get_device_name_for_fd(dri2_dpy->fd_render_gpu);
+   }
 #endif
    dri2_set_WL_bind_wayland_display(disp);
 

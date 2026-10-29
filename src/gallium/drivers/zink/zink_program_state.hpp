@@ -71,6 +71,16 @@ get_pipeline_idx(enum mesa_prim mode, VkPrimitiveTopology vkmode)
    return vkmode;
 }
 
+/* the index in zink_gfx_program::pipelines of the pipelines which can draw this mode */
+template <zink_dynamic_state DYNAMIC_STATE>
+static unsigned
+get_gfx_pipeline_idx(const struct zink_screen *screen, enum mesa_prim mode)
+{
+   if (screen->info.dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted)
+      return 0;
+   return get_pipeline_idx<DYNAMIC_STATE >= ZINK_DYNAMIC_STATE>(mode, zink_primitive_topology(mode));
+}
+
 /*
    VUID-vkCmdBindVertexBuffers2-pStrides-06209
    If pStrides is not NULL each element of pStrides must be either 0 or greater than or equal
@@ -110,9 +120,7 @@ zink_get_gfx_pipeline(struct zink_context *ctx,
    bool uses_dynamic_stride = state->uses_dynamic_stride;
 
    VkPrimitiveTopology vkmode = IS_MESH ? VK_PRIMITIVE_TOPOLOGY_MAX_ENUM : zink_primitive_topology(mode);
-   const unsigned idx = IS_MESH || screen->info.dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted ?
-                        0 :
-                        get_pipeline_idx<DYNAMIC_STATE >= ZINK_DYNAMIC_STATE>(mode, vkmode);
+   const unsigned idx = IS_MESH ? 0 : get_gfx_pipeline_idx<DYNAMIC_STATE>(screen, mode);
    assert(idx <= ARRAY_SIZE(prog->pipelines));
    if (IS_MESH) {
       if (!state->mesh_dirty && !state->mesh_modules_changed)

@@ -1296,7 +1296,7 @@ find_custom_value(struct gl_context *ctx, const struct value_desc *d, union valu
    case GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX:
    case GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX:
       {
-         struct pipe_memory_info info;
+         struct pipe_memory_info info = {0};
          struct pipe_screen *screen = ctx->pipe->screen;
 
          assert(screen->query_memory_info);

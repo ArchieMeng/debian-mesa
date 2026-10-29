@@ -652,6 +652,16 @@ etna_screen_query_dmabuf_modifiers(struct pipe_screen *pscreen,
    int mods_multiplier = 1;
    int i, j;
 
+   /* The YUV tiler reads linear planes only. */
+   if (etna_format_needs_yuv_tiler(format)) {
+      if (max && modifiers)
+         modifiers[0] = DRM_FORMAT_MOD_LINEAR;
+      if (max && external_only)
+         external_only[0] = 1;
+      *count = 1;
+      return;
+   }
+
    if (DBG_ENABLED(ETNA_DBG_SHARED_TS) &&
        VIV_FEATURE(screen, ETNA_FEATURE_FAST_CLEAR)) {
       /* If TS is supported expose the TS modifiers. GPUs with feature
@@ -722,6 +732,10 @@ etna_screen_is_dmabuf_modifier_supported(struct pipe_screen *pscreen,
    uint64_t base_mod = modifier & ~VIVANTE_MOD_EXT_MASK;
    uint64_t ts_mod = modifier & VIVANTE_MOD_TS_MASK;
    int i;
+
+   if (etna_format_needs_yuv_tiler(format) &&
+       modifier != DRM_FORMAT_MOD_LINEAR)
+      return false;
 
    for (i = 0; i < num_base_mods; i++) {
       if (base_mod != supported_modifiers[i])

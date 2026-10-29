@@ -1885,14 +1885,15 @@ zink_descriptors_update_bindless(struct zink_context *ctx)
          continue;
       while (util_dynarray_contains(&ctx->di.bindless[i].updates, uint32_t)) {
          /* updates are tracked by handle */
-         uint32_t handle = util_dynarray_pop(&ctx->di.bindless[i].updates, uint32_t);
-         bool is_buffer = ZINK_BINDLESS_IS_BUFFER(handle);
+         uint32_t h = util_dynarray_pop(&ctx->di.bindless[i].updates, uint32_t);
+         bool is_buffer = ZINK_BINDLESS_IS_BUFFER(h);
+         uint32_t handle = ZINK_BINDLESS_SLOT(h);
          unsigned binding = i * 2 + !!is_buffer;
          if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
             if (is_buffer) {
                size_t size = i ? screen->info.db_props.robustStorageTexelBufferDescriptorSize : screen->info.db_props.robustUniformTexelBufferDescriptorSize;
                info.type = i ? VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER : VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
-               info.data.pSampler = (void*)&ctx->di.bindless[i].db.buffer_infos[handle - ZINK_MAX_BINDLESS_HANDLES];
+               info.data.pSampler = (void*)&ctx->di.bindless[i].db.buffer_infos[handle];
                VKSCR(GetDescriptorEXT)(screen->dev, &info, size, ctx->dd.db.bindless_db_map + ctx->dd.db.bindless_db_offsets[binding] + handle * size);
             } else {
                info.type = i ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1923,12 +1924,11 @@ zink_descriptors_update_bindless(struct zink_context *ctx)
             wd.pNext = NULL;
             wd.dstSet = ctx->dd.t.bindless_set;
             wd.dstBinding = binding;
-            /* buffer handle ids are offset by ZINK_MAX_BINDLESS_HANDLES for internal tracking */
-            wd.dstArrayElement = is_buffer ? handle - ZINK_MAX_BINDLESS_HANDLES : handle;
+            wd.dstArrayElement = handle;
             wd.descriptorCount = 1;
             wd.descriptorType = zink_descriptor_type_from_bindless_index(wd.dstBinding);
             if (is_buffer)
-               wd.pTexelBufferView = &ctx->di.bindless[i].t.buffer_infos[wd.dstArrayElement];
+               wd.pTexelBufferView = &ctx->di.bindless[i].t.buffer_infos[handle];
             else
                wd.pImageInfo = &ctx->di.bindless[i].img_infos[handle];
             /* this sucks, but sets must be singly updated to be handled correctly */

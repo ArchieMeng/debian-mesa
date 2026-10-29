@@ -1246,11 +1246,10 @@ pub(super) fn convert_spirv_to_nir(
     build: &DeviceProgramBuild,
     name: &CStr,
     args: &[spirv::SPIRVKernelArg],
-    spec_constants: &mut HashMap<u32, Vec<u8>>,
     dev: &'static Device,
 ) -> Result<SPIRVToNirResult, &'static CStr> {
     let cache = dev.screen().shader_cache();
-    let key = build.hash_key(cache.as_ref(), name, spec_constants, &dev.lib_clc);
+    let key = build.hash_key(cache.as_ref(), name, &dev.lib_clc);
     let spirv_info = build.kernel_info(name).unwrap();
 
     match cache
@@ -1260,7 +1259,7 @@ pub(super) fn convert_spirv_to_nir(
     {
         Some(entry) => Ok(entry),
         None => {
-            let nir = build.to_nir(name, dev, spec_constants)?;
+            let nir = build.to_nir(name, dev)?;
 
             if Platform::dbg().nir {
                 eprintln!("=== Printing nir for {name:?} after spirv_to_nir");

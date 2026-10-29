@@ -828,18 +828,27 @@ _mesa_dest_buffer_exists(struct gl_context *ctx, GLenum format)
    return renderbuffer_exists(ctx, ctx->DrawBuffer, format, GL_FALSE);
 }
 
+static bool
+has_rtt_samples(const struct gl_renderbuffer_attachment *att)
+{
+   if (att->Type == GL_RENDERBUFFER)
+      return att->Renderbuffer->msrtt;
+   return att->NumSamples > 0;
+}
+
 extern bool
 _mesa_has_rtt_samples(const struct gl_framebuffer *fb)
 {
    /* If there are multiple attachments, all of them are guaranteed
-    * to have the same sample count. */
+    * to have the same sample count, and all or none of them have
+    * implicitly resolved samples. */
    if (fb->_ColorReadBufferIndex) {
       assert(fb->Attachment[fb->_ColorReadBufferIndex].Type != GL_NONE);
-      return fb->Attachment[fb->_ColorReadBufferIndex].NumSamples > 0;
+      return has_rtt_samples(&fb->Attachment[fb->_ColorReadBufferIndex]);
    } else if (fb->Attachment[BUFFER_DEPTH].Type != GL_NONE) {
-      return fb->Attachment[BUFFER_DEPTH].NumSamples > 0;
+      return has_rtt_samples(&fb->Attachment[BUFFER_DEPTH]);
    } else if (fb->Attachment[BUFFER_STENCIL].Type != GL_NONE) {
-      return fb->Attachment[BUFFER_STENCIL].NumSamples > 0;
+      return has_rtt_samples(&fb->Attachment[BUFFER_STENCIL]);
    }
 
    return true;

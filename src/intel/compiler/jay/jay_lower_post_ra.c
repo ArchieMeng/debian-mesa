@@ -79,7 +79,7 @@ lower(jay_builder *b, jay_inst *I)
       }
 
       /* Do moves on the float point to promote accumulator usage */
-      if (I->type == JAY_TYPE_U32 &&
+      if (I->type == JAY_TYPE_U32 && !I->conditional_mod &&
           I->dst.file == GPR &&
           jay_def_stride(b->shader, I->dst) == JAY_STRIDE_4 &&
           ((I->src[0].file == GPR &&

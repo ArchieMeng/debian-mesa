@@ -1831,7 +1831,6 @@ v3dX(cmd_buffer_emit_varyings_state)(struct v3dv_cmd_buffer *cmd_buffer)
    }
 }
 
-#if V3D_VERSION == 42
 /* Updates cmd_buffer, and their job, early z state tracking. Returns false if
  * EZ must be disabled for the current draw call.
  */
@@ -1954,7 +1953,7 @@ cmd_buffer_update_ez_state(struct v3dv_cmd_buffer *cmd_buffer,
     * cmd_buffer state if some stencil/depth flags were dynamic.
     */
    bool disable_ez = false;
-   bool incompatible_test = false;
+   UNUSED bool incompatible_test = false;
    switch (cmd_buffer->state.ez_state) {
    case V3D_EZ_UNDECIDED:
       /* If the pipeline didn't pick a direction but didn't disable, then go
@@ -1991,17 +1990,18 @@ cmd_buffer_update_ez_state(struct v3dv_cmd_buffer *cmd_buffer,
     * and the cmd buffer writes depth then we need to disable EZ for the rest
     * of the frame.
     */
+#if V3D_VERSION == 42
    if (incompatible_test && cmd_buffer->state.z_updates_enable) {
       assert(disable_ez);
       job->ez_state = V3D_EZ_DISABLED;
    }
+#endif
 
    if (!disable_ez)
       job->has_ez_draws = true;
 
    return !disable_ez;
 }
-#endif
 
 void
 v3dX(cmd_buffer_emit_configuration_bits)(struct v3dv_cmd_buffer *cmd_buffer)
@@ -2035,8 +2035,9 @@ v3dX(cmd_buffer_emit_configuration_bits)(struct v3dv_cmd_buffer *cmd_buffer)
       config.stencil_enable = dyn->ds.stencil.test_enable && has_stencil;
 
       cmd_buffer->state.z_updates_enable = config.z_updates_enable;
+
+      UNUSED bool enable_ez = cmd_buffer_update_ez_state(cmd_buffer, pipeline);
 #if V3D_VERSION == 42
-      bool enable_ez = cmd_buffer_update_ez_state(cmd_buffer, pipeline);
       config.early_z_enable = enable_ez;
       config.early_z_updates_enable = config.early_z_enable &&
          cmd_buffer->state.z_updates_enable;

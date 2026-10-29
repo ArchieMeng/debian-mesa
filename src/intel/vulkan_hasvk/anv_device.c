@@ -417,7 +417,7 @@ get_features(const struct anv_physical_device *pdevice,
       .shaderBufferInt64Atomics            = false,
       .shaderSharedInt64Atomics            = false,
       .shaderFloat16                       = pdevice->info.ver >= 8 && !pdevice->instance->drirc.performance.no_16bit,
-      .shaderInt8                          = pdevice->info.ver >= 8 && !pdevice->instance->drirc.performance.no_16bit,
+      .shaderInt8                          = pdevice->info.ver >= 8,
 
       .descriptorIndexing                                 = false,
       .shaderInputAttachmentArrayDynamicIndexing          = false,

@@ -154,6 +154,14 @@ fail:
 }
 
 static void
+recycle_semaphore(struct zink_screen *screen, VkSemaphore sem)
+{
+   simple_mtx_lock(&screen->semaphores_lock);
+   util_dynarray_append(&screen->semaphores, sem);
+   simple_mtx_unlock(&screen->semaphores_lock);
+}
+
+static void
 destroy_swapchain(struct zink_screen *screen, struct kopper_swapchain *cswap)
 {
    if (!cswap)
@@ -171,18 +179,14 @@ destroy_swapchain(struct zink_screen *screen, struct kopper_swapchain *cswap)
       pipe_resource_reference(&cswap->images[i].readback, NULL);
       zink_destroy_resource_surface_cache(screen, &cswap->images[i].surface_cache, false);
    }
-   free(cswap->images);
-   hash_table_u64_foreach(cswap->presents, he) {
-      struct util_dynarray *arr = he.data;
-      simple_mtx_lock(&screen->semaphores_lock);
-      util_dynarray_append_dynarray(&screen->semaphores, arr);
-      simple_mtx_unlock(&screen->semaphores_lock);
-      util_dynarray_fini(arr);
-      free(arr);
-   }
    simple_mtx_destroy(&cswap->lock);
-   _mesa_hash_table_u64_destroy(cswap->presents);
    VKSCR(DestroySwapchainKHR)(screen->dev, cswap->swapchain, NULL);
+   /* the images can't be acquired again, so their presents end with the swapchain */
+   for (unsigned i = 0; i < cswap->num_images; i++) {
+      if (cswap->images[i].present)
+         recycle_semaphore(screen, cswap->images[i].present);
+   }
+   free(cswap->images);
    free(cswap);
 }
 
@@ -207,13 +211,11 @@ prune_old_swapchains(struct zink_screen *screen, struct kopper_displaytarget *cd
          zink_screen_timeline_wait(screen, u->usage, UINT64_MAX);
          cswap->batch_uses = NULL;
       }
-      hash_table_u64_foreach(cswap->presents, he) {
-         uint64_t next = he.key;
-         /* don't wait on 'next' timeline syncpoints which will never occur */
-         if (!wait || next < screen->curr_batch) {
-            if (!zink_screen_timeline_wait(screen, next, wait ? UINT64_MAX : 0))
-               return;
-         }
+      if (cswap->present_batch) {
+         /* don't wait on a timeline syncpoint which will never occur */
+         uint64_t batch = wait ? MIN2(cswap->present_batch, screen->curr_batch - 1) : cswap->present_batch;
+         if (!zink_screen_timeline_wait(screen, batch, wait ? UINT64_MAX : 0))
+            return;
       }
       cdt->old_swapchain = cswap->next;
       destroy_swapchain(screen, cswap);
@@ -282,7 +284,6 @@ kopper_CreateSwapchain(struct zink_screen *screen, struct kopper_displaytarget *
       *result = VK_ERROR_OUT_OF_HOST_MEMORY;
       return NULL;
    }
-   cswap->last_present_prune = 1;
    util_queue_fence_init(&cswap->present_fence);
    simple_mtx_init(&cswap->lock, mtx_plain);
 
@@ -395,7 +396,6 @@ kopper_GetSwapchainImages(struct zink_screen *screen, struct kopper_swapchain *c
       mesa_loge("ZINK: failed to allocate cswap->images!");
       return VK_ERROR_OUT_OF_HOST_MEMORY;
    }
-   cswap->presents = _mesa_hash_table_u64_create(NULL);
    VkImage images[32];
    error = VKSCR(GetSwapchainImagesKHR)(screen->dev, cswap->swapchain, &cswap->num_images, images);
    assert(cswap->num_images <= ARRAY_SIZE(images));
@@ -569,6 +569,16 @@ zink_kopper_displaytarget_destroy(struct zink_screen *screen, struct kopper_disp
    FREE(cdt);
 }
 
+/* images the app holds, including presents still queued on the flush thread */
+static unsigned
+kopper_held_images(const struct kopper_swapchain *cswap)
+{
+   unsigned held = p_atomic_read(&cswap->async_presents);
+   for (unsigned i = 0; i < cswap->num_images; i++)
+      held += cswap->images[i].acquire || cswap->images[i].acquired;
+   return held;
+}
+
 static VkResult
 kopper_acquire(struct zink_screen *screen, struct zink_resource *res, uint64_t timeout)
 {
@@ -585,6 +595,7 @@ kopper_acquire(struct zink_screen *screen, struct zink_resource *res, uint64_t t
        (cdt->swapchain->images[res->obj->dt_idx].acquire || cdt->swapchain->images[res->obj->dt_idx].acquired))
       return VK_SUCCESS;
    VkSemaphore acquire = VK_NULL_HANDLE;
+   const bool infinite = timeout == UINT64_MAX;
 
    while (true) {
       if (res->obj->new_dt) {
@@ -597,9 +608,10 @@ kopper_acquire(struct zink_screen *screen, struct zink_resource *res, uint64_t t
          res->obj->access = 0;
          res->obj->access_stage = 0;
       }
-      if (timeout == UINT64_MAX && cdt->async &&
-          p_atomic_read_relaxed(&cdt->swapchain->num_acquires) >= cdt->swapchain->max_acquires) {
-         util_queue_fence_wait(&cdt->swapchain->present_fence);
+      if (timeout == UINT64_MAX &&
+          kopper_held_images(cdt->swapchain) >= cdt->swapchain->max_acquires) {
+         if (cdt->async)
+            util_queue_fence_wait(&cdt->swapchain->present_fence);
          /* With a sequence of
               glDrawBuffer(GL_FRONT_AND_BACK);
               glClearBufferfv(GL_COLOR, 0, purple);
@@ -617,7 +629,7 @@ kopper_acquire(struct zink_screen *screen, struct zink_resource *res, uint64_t t
             So let's check whether the number of acquired images is still too
             large after the fence was signalled, and if so then clear the timeout.
          */
-         if (p_atomic_read_relaxed(&cdt->swapchain->num_acquires) >= cdt->swapchain->max_acquires)
+         if (kopper_held_images(cdt->swapchain) >= cdt->swapchain->max_acquires)
             timeout = 0;
       }
       VkResult ret;
@@ -635,9 +647,8 @@ kopper_acquire(struct zink_screen *screen, struct zink_resource *res, uint64_t t
             res->obj->new_dt = true;
             continue;
          }
-         if (ret == VK_NOT_READY || ret == VK_TIMEOUT) {
-            if (timeout > 1000000)
-               UNREACHABLE("kopper_acquire: updated timeout after failure has become unreasonable large");
+         /* past the acquire limit an image may never come back, so retry only briefly */
+         if ((ret == VK_NOT_READY || ret == VK_TIMEOUT) && infinite && timeout < 1000000) {
             timeout += 4000;
             continue;
          }
@@ -648,6 +659,11 @@ kopper_acquire(struct zink_screen *screen, struct zink_resource *res, uint64_t t
    }
 
    cdt->swapchain->images[res->obj->dt_idx].acquire = acquire;
+   /* getting the image back means its last present is done with the semaphore */
+   if (cdt->swapchain->images[res->obj->dt_idx].present) {
+      recycle_semaphore(screen, cdt->swapchain->images[res->obj->dt_idx].present);
+      cdt->swapchain->images[res->obj->dt_idx].present = VK_NULL_HANDLE;
+   }
    if (cdt->swapchain->images[res->obj->dt_idx].readback)
       zink_resource(cdt->swapchain->images[res->obj->dt_idx].readback)->valid = false;
    res->obj->image = cdt->swapchain->images[res->obj->dt_idx].image;
@@ -808,6 +824,9 @@ kopper_present(void *data, void *gdata, int thread_idx)
    }
    simple_mtx_lock(&swapchain->lock);
    VkResult error2 = VKSCR(QueuePresentKHR)(screen->queue, &cpi->info);
+   /* under the lock, so an acquire that returns the image finds it */
+   if (cpi->info.waitSemaphoreCount)
+      swapchain->images[cpi->image].present = cpi->sem;
    simple_mtx_unlock(&swapchain->lock);
    zink_screen_debug_marker_end(screen, screen->frame_marker_emitted);
    zink_screen_debug_marker_begin(screen, "frame");
@@ -818,44 +837,14 @@ kopper_present(void *data, void *gdata, int thread_idx)
    if (error2 == VK_SUBOPTIMAL_KHR && cdt->swapchain == swapchain)
       cpi->res->obj->new_dt = true;
 
-   /* it's illegal to destroy semaphores if they're in use by a cmdbuf.
-    * but what does "in use" actually mean?
-    * in truth, when using timelines, nobody knows. especially not VVL.
-    *
-    * thus, to avoid infinite error spam and thread-related races,
-    * present semaphores need their own free queue based on the
-    * last-known completed timeline id so that the semaphore persists through
-    * normal cmdbuf submit/signal and then also exists here when it's needed for the present operation
-    */
-   struct util_dynarray *arr;
-   for (; screen->last_finished && swapchain->last_present_prune != screen->last_finished; swapchain->last_present_prune++) {
-      arr = _mesa_hash_table_u64_search(swapchain->presents, swapchain->last_present_prune);
-      if (arr) {
-         simple_mtx_lock(&screen->semaphores_lock);
-         util_dynarray_append_dynarray(&screen->semaphores, arr);
-         simple_mtx_unlock(&screen->semaphores_lock);
-         util_dynarray_fini(arr);
-         free(arr);
-         _mesa_hash_table_u64_remove(swapchain->presents, swapchain->last_present_prune);
-      }
-   }
-   /* queue this wait semaphore for deletion on completion of the next batch */
+   /* with implicit sync, the submit above already waited on the semaphore */
+   if (!cpi->info.waitSemaphoreCount)
+      recycle_semaphore(screen, cpi->sem);
    assert(screen->curr_batch > 0);
    uint32_t next = (uint32_t)screen->curr_batch + 1;
    /* handle overflow */
    next = MAX2(next + 1, 1);
-   arr = _mesa_hash_table_u64_search(swapchain->presents, next);
-   if (!arr) {
-      arr = malloc(sizeof(struct util_dynarray));
-      if (!arr) {
-         mesa_loge("ZINK: failed to allocate arr!");
-         return;
-      }
-
-      *arr = UTIL_DYNARRAY_INIT;
-      _mesa_hash_table_u64_insert(swapchain->presents, next, arr);
-   }
-   util_dynarray_append(arr, cpi->sem);
+   swapchain->present_batch = next;
 out:
    if (thread_idx != -1) {
       p_atomic_dec(&swapchain->async_presents);
@@ -997,6 +986,7 @@ kopper_ensure_readback(struct zink_screen *screen, struct zink_resource *res)
       struct pipe_resource templ = res->base.b;
       templ.bind = PIPE_BIND_RENDER_TARGET | PIPE_BIND_SAMPLER_VIEW;
       cswap->images[i].readback = screen->base.resource_create(&screen->base, &templ);
+      cswap->images[i].readback_needs_update = true;
    }
    return true;
 }
@@ -1052,9 +1042,17 @@ zink_kopper_acquire_readback(struct zink_context *ctx, struct zink_resource *res
          util_queue_fence_wait(&cdt->swapchain->present_fence);
       }
       cdt->age_locked = true;
-      do {
-         ret = kopper_acquire(screen, res, 0);
-      } while (!is_swapchain_kill(ret) && (ret == VK_NOT_READY || ret == VK_TIMEOUT));
+      /* this waits, and gives up shortly once past the acquire limit */
+      ret = kopper_acquire(screen, res, UINT64_MAX);
+      if (ret == VK_NOT_READY || ret == VK_TIMEOUT) {
+         /* other buffers hold every acquirable image, so read the copies kept from now on */
+         kopper_ensure_readback(screen, res);
+         const struct kopper_swapchain *cur = cdt->swapchain;
+         struct pipe_resource *copy = cur->images[last_dt_idx < cur->num_images ? last_dt_idx : 0].readback;
+         *readback = copy ? zink_resource(copy) : res;
+         cdt->age_locked = false;
+         return false;
+      }
       if (is_swapchain_kill(ret)) {
          kill_swapchain(ctx, res);
          *readback = NULL;
@@ -1082,6 +1080,8 @@ zink_kopper_present_readback(struct zink_context *ctx, struct zink_resource *res
    if (res->obj->last_dt_idx == UINT32_MAX)
       return true;
    if (res->layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+      /* the transition has to wait for the acquire */
+      zink_batch_reference_resource_rw(ctx, res, false);
       zink_screen(ctx->base.screen)->image_barrier(ctx, res, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 0, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
       ctx->base.flush(&ctx->base, NULL, 0);
    }
@@ -1110,9 +1110,11 @@ zink_kopper_present_readback(struct zink_context *ctx, struct zink_resource *res
    error = VKSCR(QueueWaitIdle)(screen->queue);
    simple_mtx_unlock(screen->queue_lock);
 
-   simple_mtx_lock(&screen->semaphores_lock);
-   util_dynarray_append(&screen->semaphores, acquire);
-   simple_mtx_unlock(&screen->semaphores_lock);
+   if (acquire) {
+      simple_mtx_lock(&screen->semaphores_lock);
+      util_dynarray_append(&screen->semaphores, acquire);
+      simple_mtx_unlock(&screen->semaphores_lock);
+   }
 
    cdt->age_locked = false;
 

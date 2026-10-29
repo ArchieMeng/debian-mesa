@@ -214,7 +214,7 @@ vn_WaitForFences(VkDevice device,
       if (payload->type == VN_SYNC_TYPE_IMPORTED_SYNC_FD) {
          const int poll_timeout = vn_timeout_to_poll_timeout(timeout);
          if (payload->fd >= 0 && sync_wait(payload->fd, poll_timeout)) {
-            result = errno == ETIME ? VK_NOT_READY : VK_ERROR_DEVICE_LOST;
+            result = errno == ETIME ? VK_TIMEOUT : VK_ERROR_DEVICE_LOST;
             goto out_stack_arr_fini;
          } else if (waitAll == VK_FALSE) {
             goto out_stack_arr_fini;
@@ -610,8 +610,10 @@ vn_SignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo)
    vn_async_vkSignalSemaphore(dev->primary_ring, device, pSignalInfo);
 
    if (payload->type != VN_SYNC_TYPE_TIMELINE_SYNC) {
-      if (vn_sync_feedback_enabled(&sem->feedback))
+      if (vn_sync_feedback_enabled(&sem->feedback)) {
          vn_sync_feedback_write(&sem->feedback, pSignalInfo->value);
+         vn_sync_feedback_cmd_recycle(dev, &sem->feedback);
+      }
       return VK_SUCCESS;
    }
 
@@ -651,8 +653,11 @@ vn_remove_signaled_semaphores(VkDevice device,
                                                        relax_state, &val);
       if (result != VK_SUCCESS)
          return result;
-      if (val < values[i])
-         semaphores[cur++] = semaphores[i];
+      if (val < values[i]) {
+         semaphores[cur] = semaphores[i];
+         values[cur] = values[i];
+         cur++;
+      }
    }
 
    *count = cur;
@@ -836,7 +841,8 @@ vn_GetSemaphoreFdKHR(VkDevice device,
                                            sync_file);
       vn_renderer_sync_reset(dev->renderer, payload->sync);
 
-      vn_wsi_sync_wait(dev, fd);
+      if (fd >= 0)
+         vn_wsi_sync_wait(dev, fd);
    } else {
       assert(payload->type == VN_SYNC_TYPE_IMPORTED_SYNC_FD);
 

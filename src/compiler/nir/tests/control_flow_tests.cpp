@@ -31,6 +31,14 @@ protected:
    }
 };
 
+class nir_lower_continue_constructs_test : public nir_test {
+protected:
+   nir_lower_continue_constructs_test()
+      : nir_test::nir_test("nir_lower_continue_constructs_test")
+   {
+   }
+};
+
 TEST_F(nir_cf_test, delete_break_in_loop)
 {
    /* Create IR:
@@ -166,4 +174,211 @@ TEST_F(nir_cf_test, lcssa_iter_safety_during_deref_remat)
 
    nir_validate_shader(b->shader, NULL);
    nir_validate_ssa_dominance(b->shader, NULL);
+}
+TEST_F(nir_lower_continue_constructs_test, nested_continue_unreachable_phi_predecessor)
+{
+   nir_loop *loop = nir_push_loop(b);
+   nir_loop_add_continue_construct(loop);
+   nir_push_if(b, nir_unit_test_uniform_input(b, 1, 1));
+   nir_push_if(b, nir_unit_test_uniform_input(b, 1, 1, 1));
+   nir_def *value = nir_unit_test_uniform_input(b, 1, 32, 2);
+   nir_push_else(b, NULL);
+   nir_push_if(b, nir_unit_test_uniform_input(b, 1, 1, 3));
+   nir_jump(b, nir_jump_continue);
+   nir_push_else(b, NULL);
+   nir_jump(b, nir_jump_break);
+   nir_pop_if(b, NULL);
+   nir_pop_if(b, NULL);
+   nir_push_else(b, NULL);
+   nir_def *other = nir_unit_test_uniform_input(b, 1, 32, 4);
+   nir_pop_if(b, NULL);
+   nir_use(b, nir_if_phi(b, value, other));
+   nir_break_if(b, nir_unit_test_uniform_input(b, 1, 1, 5));
+   nir_pop_loop(b, NULL);
+
+   nir_validate_shader(b->shader, "before lowering continue constructs");
+   ASSERT_TRUE(nir_lower_continue_constructs(b->shader));
+   nir_validate_shader(b->shader, "after lowering continue constructs");
+
+   check_nir_string(NIR_REFERENCE_SHADER(R"(
+      shader: MESA_SHADER_COMPUTE
+      name: nir_lower_continue_constructs_test
+      workgroup_size: 1, 1, 1
+      max_subgroup_size: 128
+      min_subgroup_size: 1
+      decl_function main () (entrypoint)
+
+      impl main {
+          block b0:   // preds:
+          32     %0 = undefined
+                      // succs: b1
+          loop {
+              block b1:   // preds: b0 b16
+              32     %1 = phi b0: %0, b16: %12
+              1      %2 = load_const (false)
+              1      %3 = @unit_test_uniform_input (base=0)
+                          // succs: b2 b9
+              if %3 {
+                  block b2:   // preds: b1
+                  1      %4 = @unit_test_uniform_input (base=1)
+                              // succs: b3 b4
+                  if %4 {
+                      block b3:   // preds: b2
+                      32     %5 = @unit_test_uniform_input (base=2)
+                                  // succs: b8
+                  } else {
+                      block b4:   // preds: b2
+                      1      %6 = @unit_test_uniform_input (base=3)
+                                  // succs: b5 b6
+                      if %6 {
+                          block b5:   // preds: b4
+                          1      %7 = load_const (true)
+                                      // succs: b7
+                      } else {
+                          block b6:// preds: b4
+                          break
+                          // succs: b17
+                      }
+                      block b7:  // preds: b5, succs: b8
+                  }
+                  block b8:   // preds: b3 b7
+                  1      %8 = phi b3: %2 (false), b7: %7 (true)
+                  32     %9 = phi b3: %5, b7: %1
+                              // succs: b10
+              } else {
+                  block b9:   // preds: b1
+                  32    %10 = @unit_test_uniform_input (base=4)
+                              // succs: b10
+              }
+              block b10:  // preds: b8 b9
+              1     %11 = phi b8: %8, b9: %2 (false)
+              32    %12 = phi b8: %9, b9: %10
+                          // succs: b11 b12
+              if %11 {
+                  block b11:  // preds: b10, succs: b16
+              } else {
+                  block b12:  // preds: b10
+                              @use (%12)
+                  1     %13 = @unit_test_uniform_input (base=5)
+                              // succs: b13 b14
+                  if %13 {
+                      block b13:// preds: b12
+                      break
+                      // succs: b17
+                  } else {
+                      block b14:  // preds: b12, succs: b15
+                  }
+                  block b15:  // preds: b14, succs: b16
+              }
+              block b16:  // preds: b11 b15, succs: b1
+          }
+          block b17:  // preds: b6 b13, succs: b18
+          block b18:
+      }
+   )"));
+}
+
+TEST_F(nir_lower_continue_constructs_test, nested_continue_unreachable_value)
+{
+   nir_loop *loop = nir_push_loop(b);
+   nir_loop_add_continue_construct(loop);
+   nir_push_if(b, nir_unit_test_uniform_input(b, 1, 1));
+   nir_push_if(b, nir_unit_test_uniform_input(b, 1, 1, 1));
+   nir_def *value = nir_unit_test_uniform_input(b, 1, 32, 2);
+   nir_push_else(b, NULL);
+   nir_push_if(b, nir_unit_test_uniform_input(b, 1, 1, 3));
+   nir_jump(b, nir_jump_continue);
+   nir_push_else(b, NULL);
+   nir_jump(b, nir_jump_break);
+   nir_pop_if(b, NULL);
+   nir_pop_if(b, NULL);
+   nir_use(b, value);
+   nir_push_else(b, NULL);
+   nir_def *other = nir_unit_test_uniform_input(b, 1, 32, 4);
+   nir_pop_if(b, NULL);
+   nir_use(b, nir_if_phi(b, value, other));
+   nir_break_if(b, nir_unit_test_uniform_input(b, 1, 1, 5));
+   nir_pop_loop(b, NULL);
+
+   nir_validate_shader(b->shader, "before lowering continue constructs");
+   ASSERT_TRUE(nir_lower_continue_constructs(b->shader));
+   nir_validate_shader(b->shader, "after lowering continue constructs");
+
+   check_nir_string(NIR_REFERENCE_SHADER(R"(
+      shader: MESA_SHADER_COMPUTE
+      name: nir_lower_continue_constructs_test
+      workgroup_size: 1, 1, 1
+      max_subgroup_size: 128
+      min_subgroup_size: 1
+      decl_function main () (entrypoint)
+
+      impl main {
+          block b0:   // preds:
+          32     %0 = undefined
+                      // succs: b1
+          loop {
+              block b1:   // preds: b0 b16
+              32     %1 = phi b0: %0, b16: %12
+              1      %2 = load_const (false)
+              1      %3 = @unit_test_uniform_input (base=0)
+                          // succs: b2 b9
+              if %3 {
+                  block b2:   // preds: b1
+                  1      %4 = @unit_test_uniform_input (base=1)
+                              // succs: b3 b4
+                  if %4 {
+                      block b3:   // preds: b2
+                      32     %5 = @unit_test_uniform_input (base=2)
+                                  @use (%5)
+                                  // succs: b8
+                  } else {
+                      block b4:   // preds: b2
+                      1      %6 = @unit_test_uniform_input (base=3)
+                                  // succs: b5 b6
+                      if %6 {
+                          block b5:   // preds: b4
+                          1      %7 = load_const (true)
+                                      // succs: b7
+                      } else {
+                          block b6:// preds: b4
+                          break
+                          // succs: b17
+                      }
+                      block b7:  // preds: b5, succs: b8
+                  }
+                  block b8:   // preds: b3 b7
+                  1      %8 = phi b3: %2 (false), b7: %7 (true)
+                  32     %9 = phi b3: %5, b7: %1
+                              // succs: b10
+              } else {
+                  block b9:   // preds: b1
+                  32    %10 = @unit_test_uniform_input (base=4)
+                              // succs: b10
+              }
+              block b10:  // preds: b8 b9
+              1     %11 = phi b8: %8, b9: %2 (false)
+              32    %12 = phi b8: %9, b9: %10
+                          // succs: b11 b12
+              if %11 {
+                  block b11:  // preds: b10, succs: b16
+              } else {
+                  block b12:  // preds: b10
+                              @use (%12)
+                  1     %13 = @unit_test_uniform_input (base=5)
+                              // succs: b13 b14
+                  if %13 {
+                      block b13:// preds: b12
+                      break
+                      // succs: b17
+                  } else {
+                      block b14:  // preds: b12, succs: b15
+                  }
+                  block b15:  // preds: b14, succs: b16
+              }
+              block b16:  // preds: b11 b15, succs: b1
+          }
+          block b17:  // preds: b6 b13, succs: b18
+          block b18:
+      }
+   )"));
 }

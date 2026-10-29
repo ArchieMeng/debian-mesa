@@ -1205,7 +1205,7 @@ struct pipe_context {
     *
     * \param ctx        pipe context
     * \param handle     64-bit image handle
-    * \param access     GL_READ_ONLY, GL_WRITE_ONLY or GL_READ_WRITE
+    * \param access     PIPE_IMAGE_ACCESS_* flags
     * \param resident   TRUE for resident, FALSE otherwise
     */
    void (*make_image_handle_resident)(struct pipe_context *ctx, uint64_t handle,

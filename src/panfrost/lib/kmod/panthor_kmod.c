@@ -443,7 +443,7 @@ panthor_kmod_bo_alloc(struct pan_kmod_dev *dev,
    return &bo->base;
 
 err_destroy_bo:
-   drmCloseBufferHandle(dev->fd, bo->base.handle);
+   drmCloseBufferHandle(dev->fd, req.handle);
 err_free_bo:
    pan_kmod_dev_free(dev, bo);
    return NULL;

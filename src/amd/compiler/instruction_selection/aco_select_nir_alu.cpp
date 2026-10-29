@@ -831,10 +831,13 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
             unsigned packed_size = use_s_pack ? 16 : 32;
             unsigned idx = i * instr->def.bit_size / packed_size;
             unsigned offset = i * instr->def.bit_size % packed_size;
-            if (nir_src_is_undef(instr->src[i].src))
+            if (nir_src_is_undef(instr->src[i].src)) {
+               if (offset == 0)
+                  packed[idx] = Temp(0, s1);
                continue;
-            else
+            } else {
                undef_mask[idx] = false;
+            }
 
             if (nir_src_is_const(instr->src[i].src)) {
                const_vals[idx] |= nir_src_as_uint(instr->src[i].src) << offset;

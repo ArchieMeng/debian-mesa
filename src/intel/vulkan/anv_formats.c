@@ -1669,6 +1669,11 @@ anv_get_image_format_properties(
    const struct wsi_image_create_info *wsi_info = NULL;
    const bool is_sparse = info->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
 
+   /* Unsupported format or unsupported image format */
+   if (format == NULL ||
+       format->planes[0].isl_format == ISL_FORMAT_UNSUPPORTED)
+      goto unsupported;
+
    /* Extract input structs */
    vk_foreach_struct_const(s, info->pNext) {
       switch ((unsigned)s->sType) {
@@ -1722,9 +1727,6 @@ anv_get_image_format_properties(
          break;
       }
    }
-
-   if (format == NULL)
-      goto unsupported;
 
    /* Would require some annoying tracking or kernel support. */
    if ((info->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) &&

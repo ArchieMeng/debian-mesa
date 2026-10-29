@@ -268,6 +268,12 @@ st_setup_arrays(struct st_context *st,
        vp_variant->vert_attrib_mask,
        vp_variant->vert_attrib_mask & enabled_arrays,
        velements, vbuffer, num_vbuffers);
+
+   /* The elements are laid out by their position in the mask, with holes
+    * left for the current values that st_setup_current_user() fills in, so
+    * count every attrib in the mask, not just the enabled arrays.
+    */
+   velements->count = util_bitcount(vp_variant->vert_attrib_mask);
 }
 
 /* ALWAYS_INLINE helps the compiler realize that most of the parameters are

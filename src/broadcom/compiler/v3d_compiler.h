@@ -768,6 +768,8 @@ struct v3d_compile {
         bool disable_general_tmu_sched;
         bool has_general_tmu_load;
 
+        bool robust_access_lowered;
+
         /* Minimum number of threads we are willing to use to register allocate
          * a shader with the current compilation strategy. This only prevents
          * us from lowering the thread count to register allocate successfully,

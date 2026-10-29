@@ -1642,7 +1642,11 @@ x11_handle_dri3_present_event(struct x11_swapchain *chain,
 
       assert(!chain->base.image_info.explicit_sync);
       for (unsigned i = 0; i < chain->base.image_count; i++) {
-         if (chain->images[i].pixmap == idle->pixmap) {
+         /* Match both client pixmap and our fence so we handle disconnects
+          * correctly
+          */
+         if (chain->images[i].pixmap == idle->pixmap &&
+             chain->images[i].sync_fence == idle->idle_fence) {
             chain->sent_image_count--;
             assert(chain->sent_image_count >= 0);
             wsi_queue_push(&chain->acquire_queue, i);
@@ -3052,11 +3056,11 @@ static VkResult x11_wait_for_present(struct wsi_swapchain *wsi_chain,
       int ret = u_cnd_monotonic_timedwait(&chain->present_progress_cond,
                                           &chain->present_progress_mutex,
                                           &abs_timespec);
-      if (ret == ETIMEDOUT) {
+      if (ret == thrd_timedout) {
          result = VK_TIMEOUT;
          break;
       }
-      if (ret) {
+      if (ret != thrd_success) {
          result = VK_ERROR_DEVICE_LOST;
          break;
       }

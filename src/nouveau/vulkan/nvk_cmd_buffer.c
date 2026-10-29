@@ -199,7 +199,7 @@ nvk_cmd_buffer_flush_push(struct nvk_cmd_buffer *cmd, bool incomplete)
       };
       util_dynarray_append(&cmd->pushes, push);
 
-      cmd->prev_subc = NVC0_FIFO_SUBC_FROM_PKHDR(cmd->push.last_hdr_dw);
+      cmd->prev_subc = nvk_cmd_buffer_last_subchannel(cmd);
    }
 
    cmd->push.start = cmd->push.end;

@@ -157,7 +157,7 @@ st_feedback_draw_vbo(struct gl_context *ctx,
       }
    }
 
-   draw_set_vertex_elements(draw, vp->num_inputs, velements.velems);
+   draw_set_vertex_elements(draw, velements.count, velements.velems);
    draw_set_vertex_buffers(draw, num_vbuffers, vbuffers);
 
    if (info->index_size) {

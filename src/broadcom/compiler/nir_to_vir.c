@@ -2190,6 +2190,17 @@ mem_vectorize_callback(unsigned align_mul, unsigned align_offset,
         if (hole_size > 0 || !nir_num_components_valid(num_components))
                 return false;
 
+        /* Keep robust SSBO stores scalar before robustness lowering, so each
+         * one gets an independent bounds check. Once the lowering runs out of
+         * bounds stores will be dropped and we can safely vectorize any
+         * survivors.
+         */
+        const struct v3d_compile *c = data;
+        if (c->key->robust_storage_access && !c->robust_access_lowered &&
+            low->intrinsic == nir_intrinsic_store_ssbo) {
+                return false;
+        }
+
         /* TMU general access only supports 32-bit vectors */
         if (bit_size > 32)
                 return false;
@@ -2304,6 +2315,7 @@ v3d_optimize_nir(struct v3d_compile *c, struct nir_shader *s)
                                  nir_var_mem_push_const | nir_var_mem_shared |
                                  nir_var_mem_global,
                         .callback = mem_vectorize_callback,
+                        .cb_data = c,
                         .robust_modes = 0,
                 };
                 bool vectorize_progress = false;

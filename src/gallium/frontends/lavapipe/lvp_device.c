@@ -119,7 +119,7 @@ static const struct vk_instance_extension_table lvp_instance_extensions_supporte
 #ifdef VK_USE_PLATFORM_METAL_EXT
    .EXT_metal_surface                        = true,
 #endif
-#ifndef VK_USE_PLATFORM_WIN32_KHR
+#if defined(LVP_USE_WSI_PLATFORM) && !defined(VK_USE_PLATFORM_WIN32_KHR)
    .EXT_headless_surface                     = true,
 #endif
 };
@@ -266,7 +266,9 @@ static const struct vk_device_extension_table lvp_device_extensions_supported = 
 #endif
    .EXT_mesh_shader                       = true,
    .EXT_multisampled_render_to_single_sampled = true,
-   .EXT_multisampled_render_to_swapchain = true,
+#ifdef LVP_USE_WSI_PLATFORM
+   .EXT_multisampled_render_to_swapchain  = true,
+#endif
    .EXT_multi_draw                        = true,
    .EXT_mutable_descriptor_type           = true,
    .EXT_nested_command_buffer             = true,
@@ -624,8 +626,10 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       /* VK_EXT_multisampled_render_to_single_sampled */
       .multisampledRenderToSingleSampled = true,
 
+#ifdef LVP_USE_WSI_PLATFORM
       /* VK_EXT_multisampled_render_to_swapchain */
       .multisampledRenderToSwapchain = true,
+#endif
 
       /* VK_EXT_mutable_descriptor_type */
       .mutableDescriptorType = true,

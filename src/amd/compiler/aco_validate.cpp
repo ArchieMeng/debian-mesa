@@ -187,16 +187,9 @@ validate_ir(Program* program)
             num_defs = MIN2(num_defs, instr->definitions.size());
 
             for (unsigned i = 0; i < num_defs; i++) {
-               aco_type type;
-               fixed_reg fixed_reg;
-               if (instr->isVOPC() && program->gfx_level < GFX10 &&
-                   opcode_info.def_fixed_reg[0] == fixed_exec) {
-                  type = opcode_info.def_types[0];
-                  fixed_reg = i == 0 ? not_fixed : fixed_exec;
-               } else {
-                  type = opcode_info.def_types[i];
-                  fixed_reg = opcode_info.def_fixed_reg[i];
-               }
+               aco_type type = opcode_info.get_def_type(i);
+               fixed_reg fixed_reg =
+                  opcode_info.get_def_fixed_reg(instr.get(), program->gfx_level, i);
 
                if (fixed_reg == fixed_m0) {
                   check(instr->definitions[i].isFixed() && instr->definitions[i].physReg() == m0,

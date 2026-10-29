@@ -2013,7 +2013,7 @@ private:
                    (h == 2 && v < 2) ||
                    (h == 1 && v == 4 && (dst_subnr % 32 == 2 * (src_subnr / 4)) && (src_subnr % 2 == 0)) ||
                    (h == 2 && v == 4 && (dst_subnr % 32 == src_subnr / 2)) ||
-                   (h == 4 && v == 8 && (dst_subnr % 32 == src_subnr / 4)))
+                   (h == 4 && v == 8 && (dst_subnr % 16 == src_subnr / 4)))
                   allowed = true;
             }
          }

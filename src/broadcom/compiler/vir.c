@@ -2016,6 +2016,7 @@ v3d_attempt_compile(struct v3d_compile *c)
 
                 NIR_PASS(_, c->s, nir_lower_robust_access,
                          should_lower_robustness, c->key);
+                c->robust_access_lowered = true;
         }
 
         NIR_PASS(_, c->s, nir_lower_vars_to_scratch,

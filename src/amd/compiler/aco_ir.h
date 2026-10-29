@@ -2068,7 +2068,7 @@ SubdwordCaps get_subdword_definition_caps(Program* program, const Instruction* i
 
 bool opcode_supports_dpp(amd_gfx_level gfx_level, aco_opcode opcode, bool vop3p);
 bool can_use_DPP(amd_gfx_level gfx_level, const aco_ptr<Instruction>& instr, bool dpp8);
-bool can_write_m0(const aco_ptr<Instruction>& instr);
+bool can_write_m0(const Instruction* instr);
 /* updates "instr" and returns the old instruction (or NULL if no update was needed) */
 aco_ptr<Instruction> convert_to_SDWA(amd_gfx_level gfx_level, aco_ptr<Instruction>& instr);
 aco_ptr<Instruction> convert_to_DPP(amd_gfx_level gfx_level, aco_ptr<Instruction>& instr,
@@ -2078,6 +2078,7 @@ bool needs_exec_mask(const Instruction* instr);
 aco_opcode get_vcmp_inverse(aco_opcode op);
 aco_opcode get_vcmp_swapped(aco_opcode op);
 aco_opcode get_vcmpx(aco_opcode op);
+/* Assumes that "op" is a VOPC opcode. */
 bool is_cmpx(aco_opcode op);
 
 aco_opcode get_swapped_opcode(aco_opcode opcode, unsigned idx0, unsigned idx1);
@@ -2633,6 +2634,20 @@ struct aco_alu_opcode_info {
    aco_type def_types[3];
    fixed_reg op_fixed_reg[4];
    fixed_reg def_fixed_reg[3];
+
+   aco_type get_def_type(unsigned idx) const
+   {
+      /* v_cmpx instructions before GFX10 have 2 definitions but only one def_type. */
+      return def_types[MIN2(idx, num_defs - 1u)];
+   }
+
+   fixed_reg get_def_fixed_reg(Instruction* instr, enum amd_gfx_level gfx_level, unsigned idx) const
+   {
+      if (gfx_level < GFX10 && def_fixed_reg[0] == fixed_exec && instr->isVOPC())
+         return idx == 0 ? not_fixed : fixed_exec;
+      else
+         return def_fixed_reg[idx];
+   }
 };
 
 typedef struct {

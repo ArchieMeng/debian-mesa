@@ -68,6 +68,7 @@ struct vn_queue_submission {
    uint32_t wait_index_count;
    uint32_t wait_val_count;
    uint32_t wait_sem_count;
+   uint32_t wait_stage_count;
    uint32_t sync_count;
    uint32_t sig_index_count;
    uint32_t sig_val_count;
@@ -94,6 +95,8 @@ struct vn_queue_submission {
     *  - fix timeline wait values in the pNext chain
     * wait_sems
     *  - fix semaphore handles or infos for dropped wait semaphores
+    * wait_stages
+    *  - fix stage mask in VkSubmitInfo for dropped wait semaphores
     * syncs
     *  - renderer syncs to signal
     * sync_vals
@@ -126,6 +129,7 @@ struct vn_queue_submission {
          VkSemaphoreSubmitInfo *wait_sem_infos;
       };
       uint64_t *wait_vals;
+      VkPipelineStageFlags *wait_stages;
       struct vn_renderer_sync **syncs;
       uint64_t *sync_vals;
       uint32_t *sig_indices;
@@ -553,6 +557,8 @@ vn_queue_submission_count_semaphore(struct vn_queue_submission *submit)
    if (fix.wait_sync_fd) {
       submit->wait_sem_count = wait_count;
       submit->wait_val_count = fix.wait_timeline ? wait_count : 0;
+      if (submit->batch_type == VK_STRUCTURE_TYPE_SUBMIT_INFO)
+         submit->wait_stage_count = wait_count;
    }
 
    if (fix.sig_sync_fd) {
@@ -669,6 +675,7 @@ vn_queue_submission_alloc_storage(struct vn_queue_submission *submit)
       size_t wait_indices;
       size_t wait_vals;
       size_t wait_sems;
+      size_t wait_stages;
       size_t syncs;
       size_t sync_vals;
       size_t sig_indices;
@@ -676,6 +683,7 @@ vn_queue_submission_alloc_storage(struct vn_queue_submission *submit)
       size_t sig_sems;
    } size = { 0 };
 
+   /* clang-format off */
    total += size.batch = submit->fix.batch ? vn_get_batch_size(submit) : 0;
    total += size.pnext = submit->fix.pnext ? sizeof(*submit->temp.pnext) : 0;
    total += size.cmds = submit->cmd_count * vn_get_cmd_size(submit);
@@ -683,11 +691,13 @@ vn_queue_submission_alloc_storage(struct vn_queue_submission *submit)
    total += size.wait_indices = submit->wait_index_count * sizeof(uint32_t);
    total += size.wait_vals = submit->wait_val_count * sizeof(uint64_t);
    total += size.wait_sems = submit->wait_sem_count * vn_get_sem_size(submit);
+   total += size.wait_stages = submit->wait_stage_count * sizeof(VkPipelineStageFlags);
    total += size.syncs = submit->sync_count * sizeof(void *);
    total += size.sync_vals = submit->sync_count * sizeof(uint64_t);
    total += size.sig_indices = submit->sig_index_count * sizeof(uint32_t);
    total += size.sig_vals = submit->sig_val_count * sizeof(uint64_t);
    total += size.sig_sems = submit->sig_sem_count * vn_get_sem_size(submit);
+   /* clang-format on */
 
    struct vn_queue *queue = vn_queue_from_handle(submit->queue_handle);
    uint8_t *storage = vn_cached_storage_get(&queue->storage, total);
@@ -701,7 +711,8 @@ vn_queue_submission_alloc_storage(struct vn_queue_submission *submit)
    submit->temp.wait_indices = (void *)(storage += size.dev_masks);
    submit->temp.wait_vals = (void *)(storage += size.wait_indices);
    submit->temp.wait_sems = (void *)(storage += size.wait_vals);
-   submit->temp.syncs = (void *)(storage += size.wait_sems);
+   submit->temp.wait_stages = (void *)(storage += size.wait_sems);
+   submit->temp.syncs = (void *)(storage += size.wait_stages);
    submit->temp.sync_vals = (void *)(storage += size.syncs);
    submit->temp.sig_indices = (void *)(storage += size.sync_vals);
    submit->temp.sig_vals = (void *)(storage += size.sig_indices);
@@ -951,6 +962,8 @@ vn_queue_submission_init_wait_semaphores(struct vn_queue_submission *submit)
          submit->temp.wait_sem_infos[j++] =
             submit->submit2_batch->pWaitSemaphoreInfos[i];
       } else if (submit->batch_type == VK_STRUCTURE_TYPE_SUBMIT_INFO) {
+         submit->temp.wait_stages[j] =
+            submit->submit_batch->pWaitDstStageMask[i];
          submit->temp.wait_sem_handles[j++] =
             submit->submit_batch->pWaitSemaphores[i];
       } else {
@@ -965,6 +978,7 @@ vn_queue_submission_init_wait_semaphores(struct vn_queue_submission *submit)
          submit->temp.wait_sem_infos;
       submit->temp.submit2_batch->waitSemaphoreInfoCount = j;
    } else if (submit->batch_type == VK_STRUCTURE_TYPE_SUBMIT_INFO) {
+      submit->temp.submit_batch->pWaitDstStageMask = submit->temp.wait_stages;
       submit->temp.submit_batch->pWaitSemaphores =
          submit->temp.wait_sem_handles;
       submit->temp.submit_batch->waitSemaphoreCount = j;

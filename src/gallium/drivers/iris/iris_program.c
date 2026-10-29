@@ -2754,6 +2754,9 @@ iris_force_dual_color_blend(nir_shader *nir)
       var->data.location = FRAG_RESULT_DATA0;
       var->data.index = 1;
    }
+
+   /* Update nir information. */
+   nir->info.fs.color_is_dual_source = true;
 }
 
 /**
@@ -3962,8 +3965,7 @@ iris_set_max_shader_compiler_threads(struct pipe_screen *pscreen,
                                      unsigned max_threads)
 {
    struct iris_screen *screen = (struct iris_screen *) pscreen;
-   util_queue_adjust_num_threads(&screen->shader_compiler_queue, max_threads,
-                                 false);
+   util_queue_adjust_num_threads(&screen->shader_compiler_queue, max_threads);
 }
 
 static bool

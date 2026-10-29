@@ -1028,8 +1028,8 @@ si_vpe_set_stream_out_param(struct vpe_video_processor *vpeproc,
    if (process_properties->background_color) {
       build_param->target_rect.x      = 0;
       build_param->target_rect.y      = 0;
-      build_param->target_rect.width  = pipe_surface_width(&vpeproc->dst_surfaces[0]);
-      build_param->target_rect.height = pipe_surface_height(&vpeproc->dst_surfaces[0]);
+      build_param->target_rect.width  = vpeproc->dst_surfaces[0].texture->width0;
+      build_param->target_rect.height = vpeproc->dst_surfaces[0].texture->height0;
    } else {
       build_param->target_rect.x      = process_properties->dst_region.x0;
       build_param->target_rect.y      = process_properties->dst_region.y0;
@@ -1191,7 +1191,7 @@ si_vpe_set_tonemap(struct vpe_video_processor *vpeproc,
       SIVPE_DBG(vpeproc->log_level, "Enable Tone mapping 3DLut with FastLoading\n");
       build_param->streams[stream_idx].tm_params.lut_type          = VPE_LUT_TYPE_GPU_3D_SWIZZLE;
       build_param->streams[stream_idx].dma_info.lut3d.data         = vpeproc->ws->buffer_get_virtual_address(fl_buf->buf);
-      build_param->streams[stream_idx].dma_info.lut3d.format       = VPE_SURFACE_PIXEL_FORMAT_GRPH_ARGB16161616;
+      build_param->streams[stream_idx].dma_info.lut3d.format       = VPE_SURFACE_PIXEL_FORMAT_GRPH_ABGR16161616;
       build_param->streams[stream_idx].dma_info.lut3d.mem_align    = VPE_3DLUT_ALIGNMENT_256;
       build_param->streams[stream_idx].dma_info.lut3d.bias         = 0.0f;
       build_param->streams[stream_idx].dma_info.lut3d.scale        = 1.0f;
@@ -1207,6 +1207,12 @@ si_vpe_set_tonemap(struct vpe_video_processor *vpeproc,
    build_param->streams[stream_idx].tm_params.lut_dim              = VPE_LUT_DIM;
    build_param->streams[stream_idx].tm_params.input_pq_norm_factor = 0;
    build_param->streams[stream_idx].tm_params.shaper_tf            = build_param->streams[stream_idx].surface_info.cs.tf;
+   if (build_param->streams[stream_idx].surface_info.cs.tf == VPE_TF_PQ) {
+      uint32_t pq_norm = build_param->streams[stream_idx].hdr_metadata.max_mastering;
+
+      build_param->streams[stream_idx].tm_params.shaper_tf            = VPE_TF_PQ_NORMALIZED;
+      build_param->streams[stream_idx].tm_params.input_pq_norm_factor = (uint16_t)CLAMP(pq_norm, 4000, 10000);
+   }
    build_param->streams[stream_idx].tm_params.lut_in_gamut         = build_param->streams[stream_idx].surface_info.cs.primaries;
    build_param->streams[stream_idx].tm_params.lut_out_tf           = build_param->dst_surface.cs.tf;
    build_param->streams[stream_idx].tm_params.lut_out_gamut        = build_param->dst_surface.cs.primaries;
@@ -2067,7 +2073,7 @@ si_vpe_create_processor(struct pipe_context *context, const struct pipe_video_co
        * 3DLut GPU buffer is used for fast loading 3Dlut
        * It finally calls into si_buffer_create(screen, templ, 256) to create 256-alignment buffer
        */
-      if (vpeproc->vpe_handle->level == VPE_IP_LEVEL_2_0) {
+      if (vpeproc->vpe_handle->level >= VPE_IP_LEVEL_2_0) {
          vpeproc->fl3dlut_buf = si_vid_create_buffer(vpeproc->screen, PIPE_USAGE_DEFAULT, 0, VPE_FASTLOAD_SIZE);
          if (!vpeproc->fl3dlut_buf) {
             vpeproc->fl3dlut_buf = NULL;

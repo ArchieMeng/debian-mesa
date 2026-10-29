@@ -1622,7 +1622,7 @@ impl SM70Op for OpIDp4 {
             std::mem::swap(src_type0, src_type1);
         }
         b.copy_alu_src_if_not_reg(src0, gpr, SrcType::ALU);
-        b.copy_alu_src_if_ineg_imm(src1, gpr, SrcType::I32);
+        b.copy_alu_src_if_imm(src1, gpr, SrcType::I32);
         b.copy_alu_src_if_not_reg(src2, gpr, SrcType::ALU);
     }
 

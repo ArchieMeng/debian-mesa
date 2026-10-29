@@ -1627,6 +1627,7 @@ all_functions = [
     "DrawMeshTasksIndirectEXT",
     "MultiDrawMeshTasksIndirectEXT",
     "MultiDrawMeshTasksIndirectCountEXT",
+    "RenderbufferStorageMultisampleEXT",
 
     # Keep these last. They are never used by any app.
     "ColorTable",

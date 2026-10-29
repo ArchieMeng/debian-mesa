@@ -2179,9 +2179,8 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .fragmentShadingRateNonTrivialCombinerOps = true,
       .maxFragmentSize = (VkExtent2D){2, 2},
       .maxFragmentSizeAspectRatio = 2,
-      .maxFragmentShadingRateCoverageSamples = pdev->info.gfx_level >= GFX12 ? 16 : 32,
-      .maxFragmentShadingRateRasterizationSamples =
-         pdev->info.gfx_level >= GFX12 ? VK_SAMPLE_COUNT_4_BIT : VK_SAMPLE_COUNT_8_BIT,
+      .maxFragmentShadingRateCoverageSamples = 16,
+      .maxFragmentShadingRateRasterizationSamples = VK_SAMPLE_COUNT_4_BIT,
       .fragmentShadingRateWithShaderDepthStencilWrites = !pdev->info.has_vrs_ds_export_bug,
       .fragmentShadingRateWithSampleMask = true,
       .fragmentShadingRateWithShaderSampleMask = false,

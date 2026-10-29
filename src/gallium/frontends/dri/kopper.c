@@ -451,7 +451,8 @@ kopper_update_tex_buffer(struct dri_drawable *drawable,
                          struct pipe_resource *res)
 {
    struct dri_screen *screen = drawable->screen;
-   if (screen->has_dmabuf || drawable->is_window || drawable->info.bos.sType != VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR)
+   if (!screen->swrast_loader || screen->has_dmabuf || drawable->is_window ||
+       drawable->info.bos.sType != VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR)
       return;
    drisw_update_tex_buffer(drawable, ctx, res);
 }

@@ -459,6 +459,7 @@ min_algorithm(struct spill_ctx *ctx,
                if (!u_sparse_bitset_test(&ctx->W, jay_index(I->dst))) {
                   ctx->spill_block[jay_index(I->dst)] = NULL;
                   I->dst = jay_def_spilled(ctx, jay_index(I->dst));
+                  I->uniform = jay_is_uniform(I->dst);
                }
             }
 

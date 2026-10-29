@@ -119,7 +119,7 @@ static void
 panfrost_precomp_shader_destroy(struct panfrost_precomp_cache *cache,
                                 struct panfrost_precomp_shader *shader)
 {
-   /* XXX: Do we have anything to do here? */
+   FREE(shader);
 }
 
 void

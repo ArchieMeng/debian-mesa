@@ -822,14 +822,19 @@ fd5_emit_state(struct fd_context *ctx, struct fd_ringbuffer *ring,
       OUT_RING(ring, A5XX_RB_BLEND_ALPHA_F32(bcolor->color[3]));
    }
 
-   if (ctx->dirty_shader[MESA_SHADER_VERTEX] & FD_DIRTY_SHADER_TEX) {
+   /* The program's HLSQ_UPDATE_CNTL write discards state loaded before it
+    * that no draw has used yet, so reload it after the program.
+    */
+   bool reload = dirty & FD_DIRTY_PROG;
+
+   if (reload || (ctx->dirty_shader[MESA_SHADER_VERTEX] & FD_DIRTY_SHADER_TEX)) {
       needs_border |=
          emit_textures(ctx, ring, SB4_VS_TEX, &ctx->tex[MESA_SHADER_VERTEX]);
       OUT_PKT4(ring, REG_A5XX_TPL1_VS_TEX_COUNT, 1);
       OUT_RING(ring, ctx->tex[MESA_SHADER_VERTEX].num_textures);
    }
 
-   if (ctx->dirty_shader[MESA_SHADER_FRAGMENT] & FD_DIRTY_SHADER_TEX) {
+   if (reload || (ctx->dirty_shader[MESA_SHADER_FRAGMENT] & FD_DIRTY_SHADER_TEX)) {
       needs_border |=
          emit_textures(ctx, ring, SB4_FS_TEX, &ctx->tex[MESA_SHADER_FRAGMENT]);
    }
@@ -846,11 +851,11 @@ fd5_emit_state(struct fd_context *ctx, struct fd_ringbuffer *ring,
       emit_border_color(ctx, ring);
 
    if (!emit->binning_pass) {
-      if (ctx->dirty_shader[MESA_SHADER_FRAGMENT] & FD_DIRTY_SHADER_SSBO)
+      if (reload || (ctx->dirty_shader[MESA_SHADER_FRAGMENT] & FD_DIRTY_SHADER_SSBO))
          emit_ssbos(ctx, ring, SB4_SSBO, &ctx->shaderbuf[MESA_SHADER_FRAGMENT],
                   fp);
 
-      if (ctx->dirty_shader[MESA_SHADER_FRAGMENT] & FD_DIRTY_SHADER_IMAGE)
+      if (reload || (ctx->dirty_shader[MESA_SHADER_FRAGMENT] & FD_DIRTY_SHADER_IMAGE))
          fd5_emit_images(ctx, ring, MESA_SHADER_FRAGMENT, fp);
    }
 }

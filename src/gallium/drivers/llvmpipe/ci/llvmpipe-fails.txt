@@ -36,9 +36,6 @@ spec@!opengl 1.0@rasterpos@glsl_vs_tes_linked,Fail
 spec@!opengl 3.0@clearbuffer-depth-cs-probe,Fail
 spec@arb_post_depth_coverage@arb_post_depth_coverage-multisampling,Fail
 
-spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex,Fail
-spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex@'vs_input2[1][0]' on GL_PROGRAM_INPUT,Fail
-
 spec@arb_shader_image_load_store@execution@image-array-out-of-bounds-access-load,Crash
 spec@arb_shader_image_load_store@execution@image-array-out-of-bounds-access-store,Crash
 
@@ -97,9 +94,6 @@ spec@!opengl 1.1@polygon-mode-offset@config 4: Expected white pixel on top edge,
 # Seen in https://gitlab.freedesktop.org/mesa/mesa/-/pipelines/1364513
 spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage_alpha-to-one_write-z,Fail
 spec@ovr_multiview@compiler@multiple-num-views-in-single-declaration-mismatch.vert,Fail
-
-# src/compiler/nir/nir.h:2850: nir_src_comp_as_uint: Assertion `nir_src_is_const(src)' failed.
-spec@glsl-1.50@execution@geometry@dynamic_input_array_index,Crash
 
 spec@glsl-1.30@execution@glsl-packed-back-color,Fail
 

@@ -632,6 +632,9 @@ zink_draw(struct pipe_context *pctx,
 
    /* these must be after renderpass start to avoid issues with recursion */
    bool mode_changed = ctx->gfx_pipeline_state.gfx_prim_mode != dinfo->mode;
+   /* a pipeline only draws its own topology, or its own topology class with dynamic topology */
+   const bool pipeline_idx_changed = mode_changed &&
+                                     get_gfx_pipeline_idx<DYNAMIC_STATE>(screen, mode) != ctx->gfx_pipeline_state.idx;
    bool drawid_broken = false;
    if (reads_drawid && (!dindirect || !dindirect->buffer))
       drawid_broken = (drawid_offset != 0 ||
@@ -699,7 +702,7 @@ zink_draw(struct pipe_context *pctx,
    const bool vertex_input_changed = DYNAMIC_STATE != ZINK_DYNAMIC_VERTEX_INPUT &&
                                      DYNAMIC_STATE != ZINK_DYNAMIC_VERTEX_INPUT2 &&
                                      ctx->vertex_state_changed;
-   bool pipeline_changed = ctx->gfx_pipeline_state.dirty || rp_state != ctx->gfx_pipeline_state.rp_state || ctx->gfx_dirty || ctx->dirty_gfx_stages || prim_changed || vertex_input_changed || BATCH_CHANGED ?
+   bool pipeline_changed = ctx->gfx_pipeline_state.dirty || rp_state != ctx->gfx_pipeline_state.rp_state || ctx->gfx_dirty || ctx->dirty_gfx_stages || prim_changed || pipeline_idx_changed || vertex_input_changed || BATCH_CHANGED ?
                            update_gfx_pipeline<DYNAMIC_STATE, BATCH_CHANGED>(ctx, bs, mode) :
                            false;
 
@@ -1270,8 +1273,9 @@ zink_launch_grid(struct pipe_context *pctx, const struct pipe_grid_info *info)
       for (unsigned i = 0; i < info->num_globals; i++) {
          struct zink_resource *res = zink_resource(info->globals[i]);
          util_range_add(&res->base.b, &res->valid_buffer_range, 0, res->base.b.width0);
-         zink_batch_reference_resource_rw(ctx, res, true);
+         /* barrier before setting usage so access from completed batches is reset */
          zink_screen(ctx->base.screen)->buffer_barrier(ctx, res, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+         zink_batch_reference_resource_rw(ctx, res, true);
          zink_resource_disable_unordered(res, true);
       }
    }

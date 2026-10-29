@@ -294,11 +294,22 @@ zink_create_transient_surface(struct zink_context *ctx, const struct pipe_surfac
 {
    struct zink_resource *res = zink_resource(psurf->texture);
    struct zink_resource *transient = res->transient;
-   if (!res->transient || res->transient->base.b.nr_samples != nr_samples) {
+   /* multisampled images have a single level, so they only cover the attached one */
+   bool one_level = nr_samples > 1;
+   unsigned width = u_minify(psurf->texture->width0, psurf->level);
+   unsigned height = u_minify(psurf->texture->height0, psurf->level);
+   if (!res->transient || res->transient->base.b.nr_samples != nr_samples ||
+       (one_level && (res->transient->base.b.width0 != width ||
+                      res->transient->base.b.height0 != height))) {
       /* transient fb attachment: not cached */
       struct pipe_resource rtempl = *psurf->texture;
       rtempl.next = NULL;
       rtempl.nr_samples = nr_samples;
+      if (one_level) {
+         rtempl.width0 = width;
+         rtempl.height0 = height;
+         rtempl.last_level = 0;
+      }
       rtempl.bind &= ~(PIPE_BIND_LINEAR | ZINK_BIND_DMABUF);
       rtempl.bind |= ZINK_BIND_TRANSIENT;
       if (zink_format_needs_mutable(rtempl.format, psurf->format, true))
@@ -312,10 +323,12 @@ zink_create_transient_surface(struct zink_context *ctx, const struct pipe_surfac
       }
    }
 
-   VkImageViewCreateInfo ivci = create_fb_ivci(zink_screen(ctx->base.screen), res, psurf);
-   ivci.image = transient->obj->image;
-   ivci.pNext = NULL;
    struct pipe_surface templ = *psurf;
    templ.texture = &transient->base.b;
+   if (one_level)
+      templ.level = 0;
+   VkImageViewCreateInfo ivci = create_fb_ivci(zink_screen(ctx->base.screen), res, &templ);
+   ivci.image = transient->obj->image;
+   ivci.pNext = NULL;
    return zink_get_surface(ctx, &templ, &ivci);
 }

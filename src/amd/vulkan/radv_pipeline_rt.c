@@ -792,7 +792,12 @@ radv_rt_compile_shaders(struct radv_device *device, struct vk_pipeline_cache *ca
       if (nir_needed) {
          const bool cached = !stage->key.optimisations_disabled &&
                              !(pipeline->base.base.create_flags & VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR);
-         rt_stages[idx].stack_size = stage->nir->scratch_size;
+
+         /* On partial cache hits (when binaries are found but not NIR), the stack size is already
+          * restored from the cache but NIR must be recompiled in some cases. Do not overwrite it
+          * with the NIR scratch size which might be zero.
+          */
+         rt_stages[idx].stack_size = MAX2(rt_stages[idx].stack_size, stage->nir->scratch_size);
          rt_stages[idx].nir = radv_pipeline_cache_nir_to_handle(device, cache, stage->nir, rt_stages[idx].blake3, cached);
       }
 

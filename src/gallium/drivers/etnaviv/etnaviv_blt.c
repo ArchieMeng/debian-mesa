@@ -326,6 +326,11 @@ emit_blt_genmipmap(struct etna_cmd_stream *stream, const struct blt_genmipmap_op
 
    etna_set_state(stream, VIVS_BLT_SRC_STRIDE, blt_compute_stride_bits(&op->src));
    etna_set_state(stream, VIVS_BLT_SRC_CONFIG, blt_compute_src_img_config_bits(&op->src));
+   if (op->src.use_ts) {
+      etna_set_state_reloc(stream, VIVS_BLT_SRC_TS, &op->src.ts_addr);
+      etna_set_state(stream, VIVS_BLT_SRC_TS_CLEAR_VALUE0, op->src.ts_clear_value[0]);
+      etna_set_state(stream, VIVS_BLT_SRC_TS_CLEAR_VALUE1, op->src.ts_clear_value[1]);
+   }
    etna_set_state_reloc(stream, VIVS_BLT_SRC_ADDR, &op->src.addr);
 
    etna_set_state(stream, VIVS_BLT_DEST_CONFIG, blt_compute_dest_img_config_bits(&op->src));
@@ -683,6 +688,8 @@ etna_generate_mipmap_blt(struct pipe_context *pctx,
       op.src.ts_addr.bo = rsc->ts_bo;
       op.src.ts_addr.offset = src_lev->ts_offset;
       op.src.ts_addr.flags = ETNA_RELOC_READ;
+      op.src.ts_clear_value[0] = src_lev->clear_value;
+      op.src.ts_clear_value[1] = src_lev->clear_value >> 32;
       op.src.ts_mode = src_lev->ts_mode;
       op.src.ts_compress_fmt = src_lev->ts_compress_fmt;
    }

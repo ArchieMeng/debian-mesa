@@ -727,11 +727,15 @@ static void emit_load_var(struct lp_build_nir_soa_context *bld,
             LLVMValueRef result2;
 
             result[i] = bld->gs_iface->fetch_input(bld->gs_iface, &bld->base,
-                                                   false, vertex_index_val, 0, attrib_index_val, swizzle_index_val);
+                                                   indir_vertex_index ? true : false,
+                                                   indir_vertex_index ? indir_vertex_index : vertex_index_val,
+                                                   0, attrib_index_val, swizzle_index_val);
             if (bit_size == 64) {
                LLVMValueRef swizzle_index_val = lp_build_const_int32(gallivm, idx + 1);
                result2 = bld->gs_iface->fetch_input(bld->gs_iface, &bld->base,
-                                                    false, vertex_index_val, 0, attrib_index_val, swizzle_index_val);
+                                                    indir_vertex_index ? true : false,
+                                                    indir_vertex_index ? indir_vertex_index : vertex_index_val,
+                                                    0, attrib_index_val, swizzle_index_val);
                result[i] = emit_fetch_64bit(bld, result[i], result2);
             }
          } else if (bld->tes_iface) {
@@ -3777,9 +3781,17 @@ get_deref_offset(struct lp_build_nir_soa_context *bld, nir_deref_instr *instr,
 
    if (vertex_index_out != NULL || vertex_index_ref != NULL) {
       if (vertex_index_ref) {
-         *vertex_index_ref = get_src(bld, &path.path[idx_lvl]->arr.index, 0);
-         if (vertex_index_out)
-            *vertex_index_out = 0;
+         nir_src src = path.path[idx_lvl]->arr.index;
+         if (vertex_index_out && nir_src_is_const(src)) {
+            *vertex_index_ref = NULL;
+            *vertex_index_out = nir_src_as_uint(src);
+         } else {
+            LLVMValueRef idx_src = get_src(bld, &src, 0);
+            idx_src = cast_type(bld, idx_src, nir_type_uint, 32);
+            *vertex_index_ref = idx_src;
+            if (vertex_index_out)
+               *vertex_index_out = 0;
+         }
       } else {
          *vertex_index_out = nir_src_as_uint(path.path[idx_lvl]->arr.index);
       }
@@ -4042,7 +4054,7 @@ visit_load_var(struct lp_build_nir_soa_context *bld,
 
       get_deref_offset(bld, deref, vs_in,
                    gs_in ? &vertex_index : NULL,
-                   (tcs_in || tcs_out || tes_in) ? &indir_vertex_index : NULL,
+                   (gs_in || tcs_in || tcs_out || tes_in) ? &indir_vertex_index : NULL,
                    &const_index, &indir_index);
 
       /* Return undef for loads definitely outside of the array bounds

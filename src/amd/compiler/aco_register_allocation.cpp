@@ -1492,7 +1492,7 @@ get_reg_specified(ra_ctx& ctx, const RegisterFile& reg_file, RegClass rc,
    /* VCC is outside the bounds */
    bool is_vcc =
       info.rc.type() == RegType::sgpr && vcc_win.contains(reg_win) && ctx.program->needs_vcc;
-   bool is_m0 = info.rc == s1 && reg == m0 && can_write_m0(instr);
+   bool is_m0 = info.rc == s1 && reg == m0 && can_write_m0(instr.get());
    if (!info.bounds.contains(reg_win) && !is_vcc && !is_m0)
       return false;
 

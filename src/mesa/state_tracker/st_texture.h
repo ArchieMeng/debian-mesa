@@ -220,6 +220,21 @@ st_astc_format_fallback(const struct st_context *st, mesa_format format);
 bool
 st_compressed_format_fallback(struct st_context *st, mesa_format format);
 
+static inline unsigned
+st_image_access(GLenum access)
+{
+   switch (access) {
+   case GL_READ_ONLY:
+      return PIPE_IMAGE_ACCESS_READ;
+   case GL_WRITE_ONLY:
+      return PIPE_IMAGE_ACCESS_WRITE;
+   case GL_READ_WRITE:
+      return PIPE_IMAGE_ACCESS_READ_WRITE;
+   default:
+      UNREACHABLE("bad image access");
+   }
+}
+
 void
 st_convert_image(const struct st_context *st, const struct gl_image_unit *u,
                  struct pipe_image_view *img, enum gl_access_qualifier shader_access);

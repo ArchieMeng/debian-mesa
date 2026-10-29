@@ -164,13 +164,9 @@ static void
 reset_batch_state_ctx(struct zink_context *ctx, struct zink_batch_state *bs)
 {
    /* this is where bindless texture/buffer ids get recycled */
-   for (unsigned i = 0; i < 2; i++) {
-      while (util_dynarray_contains(&bs->bindless_releases[i], uint32_t)) {
-         uint32_t handle = util_dynarray_pop(&bs->bindless_releases[i], uint32_t);
-         bool is_buffer = ZINK_BINDLESS_IS_BUFFER(handle);
-         struct util_idalloc *ids = i ? &ctx->di.bindless[is_buffer].img_slots : &ctx->di.bindless[is_buffer].tex_slots;
-         util_idalloc_free(ids, is_buffer ? handle - ZINK_MAX_BINDLESS_HANDLES : handle);
-      }
+   while (util_dynarray_contains(&bs->bindless_unrefs, struct zink_bindless_descriptor *)) {
+      struct zink_bindless_descriptor *bd = util_dynarray_pop(&bs->bindless_unrefs, struct zink_bindless_descriptor *);
+      zink_bindless_descriptor_unref(zink_screen(ctx->base.screen), bd);
    }
 
    /* queries must only be destroyed once they are inactive */
@@ -255,8 +251,7 @@ zink_batch_state_destroy(struct zink_screen *screen, struct zink_batch_state *bs
    util_dynarray_fini(&bs->swapchain_obj);
    util_dynarray_fini(&bs->swapchain_obj_unsync);
    util_dynarray_fini(&bs->zombie_samplers);
-   util_dynarray_fini(&bs->bindless_releases[0]);
-   util_dynarray_fini(&bs->bindless_releases[1]);
+   util_dynarray_fini(&bs->bindless_unrefs);
    util_dynarray_fini(&bs->acquires);
    util_dynarray_fini(&bs->signal_semaphores);
    util_dynarray_fini(&bs->user_signal_semaphores);
@@ -362,7 +357,7 @@ create_batch_state(struct zink_context *ctx)
 
    SET_CREATE(&bs->programs);
    SET_CREATE(&bs->active_queries);
-   SET_CREATE(&bs->dmabuf_exports);
+   _mesa_hash_table_init(&bs->dmabuf_exports, bs, _mesa_hash_pointer, _mesa_key_pointer_equal);
    bs->signal_semaphores = UTIL_DYNARRAY_INIT;
    bs->user_signal_semaphores = UTIL_DYNARRAY_INIT;
    bs->user_signal_semaphore_values = UTIL_DYNARRAY_INIT;
@@ -378,8 +373,7 @@ create_batch_state(struct zink_context *ctx)
    bs->freed_sparse_backing_bos = UTIL_DYNARRAY_INIT;
    bs->acquires = UTIL_DYNARRAY_INIT;
    bs->acquire_flags = UTIL_DYNARRAY_INIT;
-   bs->bindless_releases[0] = UTIL_DYNARRAY_INIT;
-   bs->bindless_releases[1] = UTIL_DYNARRAY_INIT;
+   bs->bindless_unrefs = UTIL_DYNARRAY_INIT;
    bs->swapchain_obj = UTIL_DYNARRAY_INIT;
    bs->swapchain_obj_unsync = UTIL_DYNARRAY_INIT;
    bs->fence.mfences = UTIL_DYNARRAY_INIT;
@@ -617,7 +611,7 @@ post_submit(struct zink_batch_state *bs, struct zink_screen *screen)
    if (bs->is_device_lost) {
       if (bs->ctx->reset.reset)
          bs->ctx->reset.reset(bs->ctx->reset.data, PIPE_GUILTY_CONTEXT_RESET);
-      else if (screen->abort_on_hang && !screen->robust_ctx_count)
+      else if (screen->abort_on_hang && !p_atomic_read_relaxed(&screen->robust_ctx_count))
          /* if nothing can save us, abort */
          abort();
       screen->device_lost = true;
@@ -826,17 +820,21 @@ submit_queue(void *data, void *gdata, int thread_index)
 
    unsigned i = 0;
    VkSemaphore *sem = bs->signal_semaphores.data;
-   set_foreach(&bs->dmabuf_exports, entry) {
+   hash_table_foreach(&bs->dmabuf_exports, entry) {
       struct zink_resource *res = (void*)entry->key;
+      /* Add the batch's fence as a write fence if the batch wrote the image,
+       * otherwise as a read fence, which only later writers wait for.
+       */
       if (res->obj->exportable_dmabuf) {
+         bool write = entry->data != NULL;
          for (; res; res = zink_resource(res->base.b.next))
-            zink_screen_import_dmabuf_semaphore(screen, res, sem[i++]);
+            zink_screen_import_dmabuf_semaphore(screen, res, sem[i++], write);
       }
 
       struct pipe_resource *pres = (void*)entry->key;
       pipe_resource_reference(&pres, NULL);
    }
-   _mesa_set_clear(&bs->dmabuf_exports, NULL);
+   _mesa_hash_table_clear(&bs->dmabuf_exports, NULL);
 
    if (bs->sparse_semaphore)
       (void)util_dynarray_pop(&bs->acquires, VkSemaphore);
@@ -899,7 +897,23 @@ zink_end_batch(struct zink_context *ctx)
          zink_query_sync(ctx, (void*)entry->key);
    }
 
-   set_foreach(&bs->dmabuf_exports, entry) {
+   /* Wait for the implicit-sync fences of the dma-bufs this batch used: only
+    * for the write fences if the batch just read the image, but for all of
+    * them if the batch wrote it.
+    */
+   hash_table_foreach(&bs->dmabuf_exports, entry) {
+      struct zink_resource *res = (void*)entry->key;
+      if (!res->obj->exportable_dmabuf)
+         continue;
+      bool write = entry->data != NULL;
+      for (struct zink_resource *r = res; r; r = zink_resource(r->base.b.next)) {
+         VkSemaphore sem = zink_screen_export_dmabuf_semaphore(screen, r, write);
+         if (sem)
+            util_dynarray_append(&bs->fd_wait_semaphores, sem);
+      }
+   }
+
+   hash_table_foreach(&bs->dmabuf_exports, entry) {
       struct zink_resource *res = (void*)entry->key;
       if (screen->info.have_KHR_synchronization2) {
          VkImageMemoryBarrier2 imb;

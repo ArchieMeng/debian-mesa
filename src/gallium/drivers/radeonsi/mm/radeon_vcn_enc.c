@@ -1860,18 +1860,19 @@ static void radeon_enc_encode_bitstream(struct pipe_video_codec *encoder,
    if (enc->error)
       return;
 
+   struct si_resource *fb_buf = si_vid_create_buffer(enc->screen, PIPE_USAGE_STAGING, 0, 4096);
+   if (!fb_buf) {
+      RADEON_ENC_ERR("Can't create feedback buffer.\n");
+      return;
+   }
+
    enc->get_buffer(destination, &enc->bs_handle, NULL);
    enc->bs_size = destination->width0;
    enc->bs_offset = 0;
 
    *fb = enc->fb = CALLOC_STRUCT(radeon_enc_fb_buffer);
 
-   enc->fb->res = si_vid_create_buffer(enc->screen, PIPE_USAGE_STAGING, 0, 4096);
-   if (!enc->fb->res) {
-      RADEON_ENC_ERR("Can't create feedback buffer.\n");
-      return;
-   }
-
+   enc->fb->res = fb_buf;
    enc->fb->data = radeon_vcn_enc_encode_headers(enc);
    enc->fb->max_bitstream_size = enc->bs_size - enc->bs_offset;
    enc->enc_pic.enc_params.allowed_max_bitstream_size = enc->fb->max_bitstream_size;

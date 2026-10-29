@@ -425,7 +425,16 @@ static bool si_update_shaders_shared_by_vertex_and_mesh_pipe(struct si_context *
       assert(pipeline);
 
       si_sqtt_describe_pipeline_bind(sctx, pipeline_code_hash, 0);
+
       si_pm4_bind_state(sctx, sqtt_pipeline, pipeline);
+
+      /* shader states overwrite the pipeline's code addresses when they are emitted, and
+       * shaders with the same code share an already emitted pipeline, which the bind
+       * doesn't mark dirty
+       */
+      if (sctx->dirty_atoms & (SI_STATE_BIT(ls) | SI_STATE_BIT(hs) | SI_STATE_BIT(es) |
+                               SI_STATE_BIT(gs) | SI_STATE_BIT(vs) | SI_STATE_BIT(ps)))
+         sctx->dirty_atoms |= SI_STATE_BIT(sqtt_pipeline);
    }
 
    return true;

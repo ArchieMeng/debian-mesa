@@ -492,12 +492,12 @@ render_state_set_zs_attachments(struct panvk_cmd_buffer *cmdbuf,
       }
 
       if (z_resolve.mode != VK_RESOLVE_MODE_NONE) {
+         render->z_pview.resolve = get_z_pan_image_view(z_resolve.dst_iview);
          const struct pan_image *z_resolve_pimage =
-            pan_image_view_get_zs_plane(&z_resolve.dst_iview->pview).image;
+            pan_image_view_get_zs_plane(&render->z_pview.resolve).image;
 
          if ((z_ms2ss || z_att->storeOp != VK_ATTACHMENT_STORE_OP_STORE) &&
              !avoid_direct_resolve_to(z_resolve_pimage)) {
-            render->z_pview.resolve = get_z_pan_image_view(z_resolve.dst_iview);
             render->fb.resolve.z = (struct pan_fb_resolve_target) {
                .in_bounds = {
                   .resolve = PAN_FB_RESOLVE_Z,
@@ -519,12 +519,12 @@ render_state_set_zs_attachments(struct panvk_cmd_buffer *cmdbuf,
       }
 
       if (s_resolve.mode != VK_RESOLVE_MODE_NONE) {
+         render->s_pview.resolve = get_s_pan_image_view(s_resolve.dst_iview);
          const struct pan_image *s_resolve_pimage =
-            pan_image_view_get_s_plane(&s_resolve.dst_iview->pview).image;
+            pan_image_view_get_s_plane(&render->s_pview.resolve).image;
 
          if ((s_ms2ss || s_att->storeOp != VK_ATTACHMENT_STORE_OP_STORE) &&
              !avoid_direct_resolve_to(s_resolve_pimage)) {
-            render->s_pview.resolve = get_s_pan_image_view(s_resolve.dst_iview);
             render->fb.resolve.s = (struct pan_fb_resolve_target) {
                .in_bounds = {
                   .resolve = PAN_FB_RESOLVE_S,

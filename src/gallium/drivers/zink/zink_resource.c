@@ -648,7 +648,7 @@ find_good_mod(struct zink_screen *screen, VkImageCreateInfo *ici, const struct p
          continue;
 
       VkImageCreateFlags try_flags = saved_flags;
-      if (feats & VK_FORMAT_FEATURE_DISJOINT_BIT && util_format_get_num_planes(templ->format))
+      if (feats & VK_FORMAT_FEATURE_DISJOINT_BIT && util_format_get_num_planes(templ->format) > 1)
          try_flags |= VK_IMAGE_CREATE_DISJOINT_BIT;
       ici->flags = try_flags;
 
@@ -2056,7 +2056,7 @@ add_resource_bind(struct zink_context *ctx, struct zink_resource *res, unsigned 
    res->rebind_count++;
    if (old_obj->exportable) {
       simple_mtx_lock(&ctx->bs->exportable_lock);
-      _mesa_set_remove_key(&ctx->bs->dmabuf_exports, &staging);
+      _mesa_hash_table_remove_key(&ctx->bs->dmabuf_exports, &staging);
       simple_mtx_unlock(&ctx->bs->exportable_lock);
    }
    zink_resource_object_reference(screen, &old_obj, NULL);
@@ -2845,8 +2845,8 @@ zink_image_map(struct pipe_context *pctx,
       return NULL;
 
    trans->base.b.level = level;
-   if (zink_is_swapchain(res))
-      /* this is probably a multi-chain which has already been acquired */
+   /* reads of presented images go through zink_kopper_acquire_readback */
+   if (zink_is_swapchain(res) && (!(usage & PIPE_MAP_READ) || res->obj->last_dt_idx == UINT32_MAX))
       zink_kopper_acquire(ctx, res, 0);
 
    void *ptr;

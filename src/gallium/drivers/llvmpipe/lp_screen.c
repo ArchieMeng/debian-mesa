@@ -907,6 +907,7 @@ lp_disk_cache_create(struct llvmpipe_screen *screen)
 
    _mesa_blake3_update(&ctx, &gallivm_perf, sizeof(gallivm_perf));
    update_cache_blake3_cpu(&ctx);
+   _mesa_blake3_update(&ctx, &lp_native_vector_width, sizeof(lp_native_vector_width));
    _mesa_blake3_final(&ctx, blake3);
    mesa_bytes_to_hex(cache_id, blake3, BLAKE3_KEY_LEN);
 

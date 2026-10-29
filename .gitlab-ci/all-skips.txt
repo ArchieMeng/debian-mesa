@@ -30,10 +30,6 @@ glx@glx_arb_sync_control@timing.*
 # This test is not built with waffle, while we do build tests with waffle
 spec@!opengl 1.1@windowoverlap
 
-# These tests are flaking too much recently on almost all drivers, so better skip them until the cause is identified
-spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex
-spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex@'vs_input2[1][0]' on GL_PROGRAM_INPUT
-
 # gbm does not support reading the front buffer after a swapbuffers, and
 # that's intentional. Don't bother running these tests when PIGLIT_PLATFORM=gbm.
 # Note that this doesn't include tests like fbo-sys-blit, which draw/read front

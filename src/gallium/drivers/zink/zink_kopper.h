@@ -49,6 +49,7 @@ struct kopper_swapchain_image {
    struct zink_resource *acquired;
    struct pipe_resource *readback;
    VkSemaphore acquire;
+   VkSemaphore present; // waited on by the last present, free once the image is acquired again
    VkImageLayout layout;
 
    struct set surface_cache;
@@ -62,8 +63,7 @@ struct kopper_swapchain {
 
    unsigned last_present;
    unsigned num_images;
-   uint32_t last_present_prune;
-   struct hash_table_u64 *presents;
+   uint32_t present_batch; // wait for this batch before destroying the swapchain
    VkSwapchainCreateInfoKHR scci;
    unsigned num_acquires;
    unsigned max_acquires;

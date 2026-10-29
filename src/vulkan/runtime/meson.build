@@ -226,15 +226,8 @@ libvulkan_lite_instance = static_library(
 # - idep_vulkan_runtime_headers
 # - idep_vulkan_runtime
 idep_vulkan_lite_runtime_headers = declare_dependency(
-  sources : [
-    spirv_info_h,
-    vk_cmd_enqueue_entrypoints[0],
-    vk_cmd_queue[1],
-    vk_common_entrypoints[0],
-    vk_physical_device_features[1],
-    vk_physical_device_properties[1],
-  ],
   include_directories : include_directories('.'),
+  dependencies : [vulkan_lite_runtime_header_gen_deps]
 )
 
 # This is likely a bug in the Meson VS backend, as MSVC with ninja works fine.

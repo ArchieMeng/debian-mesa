@@ -627,7 +627,7 @@ build_texel_buffer_as_image_coords(nir_builder *b,
 {
    nir_def *base_offset = nullptr;
    nir_def *real_size = build_texel_buffer_size(b, desc, &base_offset);
-   nir_def *oob = nir_ige(b, offset, real_size);
+   nir_def *oob = nir_uge(b, offset, real_size);
 
    offset = nir_iadd(b, offset, base_offset);
 
@@ -1174,7 +1174,6 @@ gather_push_constants(nir_shader *shader, struct tu_shader *tu_shader)
             uint32_t range = nir_intrinsic_range(intrin);
             min = MIN2(min, base);
             max = MAX2(max, base + range);
-            break;
          }
       }
    }
@@ -2148,10 +2147,11 @@ tu6_emit_cs_config(struct tu_cs *cs,
       ir3_const_state(v)->push_consts_type == IR3_PUSH_CONSTS_SHARED;
 
    with_crb (cs) {
-      tu6_emit_shared_consts_enable<CHIP>(crb, shared_consts_enable);
-
+      /* A6XX: SP_UPDATE_CNTL must happen before HLSQ_SHARED_CONSTS(), see tu6_emit_program_config */
       crb.add(SP_UPDATE_CNTL(CHIP, .cs_state = true, .cs_uav = true,
-                             .cs_shared_const = shared_consts_enable));
+                             .cs_shared_const = CHIP == A6XX));
+
+      tu6_emit_shared_consts_enable<CHIP>(crb, shared_consts_enable);
       tu6_emit_xs_config<CHIP>(crb, { .cs = v });
       tu6_emit_xs<CHIP>(crb, cs->device, MESA_SHADER_COMPUTE, v, pvtmem, binary_iova);
    }

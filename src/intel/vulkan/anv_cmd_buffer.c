@@ -812,6 +812,13 @@ anv_cmd_buffer_set_descriptor_buffer_offsets(struct anv_cmd_buffer *cmd_buffer,
    for (uint32_t i = 0; i < set_count; i++) {
       const uint32_t set_index = first_set + i;
 
+      /* With graphicsPipelineLibrary, pipeline layouts can have VK_NULL_HANDLE
+       * set layouts; there is nothing to set up for those (same as
+       * VK_NULL_HANDLE descriptor sets in vkCmdBindDescriptorSets).
+       */
+      if (layout->set_layouts[set_index] == NULL)
+         continue;
+
       const struct anv_descriptor_set_layout *set_layout =
          container_of(layout->set_layouts[set_index],
                       const struct anv_descriptor_set_layout, vk);

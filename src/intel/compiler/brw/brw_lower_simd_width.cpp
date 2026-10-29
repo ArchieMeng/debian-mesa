@@ -171,21 +171,23 @@ get_sampler_lowered_simd_width(const struct intel_device_info *devinfo,
        tex->sampler_opcode == BRW_SAMPLER_OPCODE_SAMPLE_D_C_PACKED)
       return devinfo->ver < 20 ? 8 : 16;
 
-   const unsigned max_payload_size =
-      MAX_SAMPLER_MESSAGE_SIZE *
-      (reg_unit(devinfo) * 8) /* min SIMD */ *
-      4 /* dword */;
-   const unsigned payload_param_size =
-      brw_type_size_bytes(tex->src[TEX_LOGICAL_SRC_PAYLOAD0].type);
-   unsigned payload_size =
-      (tex->sources - TEX_LOGICAL_SRC_PAYLOAD0) *
-      tex->exec_size *
-      payload_param_size;
-
    unsigned simd_width = tex->exec_size;
-   while (payload_size > max_payload_size) {
-      payload_size /= 2;
-      simd_width /= 2;
+   if (tex->sources > TEX_LOGICAL_SRC_PAYLOAD0) {
+      const unsigned max_payload_size =
+         MAX_SAMPLER_MESSAGE_SIZE *
+         (reg_unit(devinfo) * 8) /* min SIMD */ *
+         4 /* dword */;
+      const unsigned payload_param_size =
+         brw_type_size_bytes(tex->src[TEX_LOGICAL_SRC_PAYLOAD0].type);
+      unsigned payload_size =
+         (tex->sources - TEX_LOGICAL_SRC_PAYLOAD0) *
+         tex->exec_size *
+         payload_param_size;
+
+      while (payload_size > max_payload_size) {
+         payload_size /= 2;
+         simd_width /= 2;
+      }
    }
 
    const unsigned max_hw_simd = devinfo->ver < 20 ? 16 : 32;

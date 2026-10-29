@@ -428,7 +428,10 @@ stw_st_flush(struct st_context *st,
    args.stwfb = stwfb;
    args.flags = flags;
 
-   if (flags & ST_FLUSH_END_OF_FRAME && !stwfb->fb->winsys_framebuffer)
+   /* zink presents from its own queue in submission order, so only presents
+    * that read the image on the cpu need the frame to be finished
+    */
+   if (flags & ST_FLUSH_END_OF_FRAME && !stwfb->fb->winsys_framebuffer && !stw_dev->zink)
       flags |= ST_FLUSH_WAIT;
 
    if (flags & ST_FLUSH_WAIT)

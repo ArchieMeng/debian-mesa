@@ -6255,7 +6255,7 @@ emit_prolog_regs(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *v
    if (pdev->info.gfx_level >= GFX12) {
       gfx12_push_sh_reg(vs_shader->regs.pgm_lo, prolog->va >> 8);
       gfx12_push_sh_reg(vs_shader->regs.pgm_rsrc1, rsrc1);
-      if (vs_shader->info.merged_shader_compiled_separately)
+      if (vs_shader->info.merged_shader_compiled_separately && vs_shader->info.next_stage == MESA_SHADER_GEOMETRY)
          gfx12_push_sh_reg(vs_shader->regs.pgm_rsrc2, rsrc2);
 
       if (prolog->key.vs.is_ngg) {
@@ -6267,7 +6267,7 @@ emit_prolog_regs(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *v
    } else {
       radeon_set_sh_reg(vs_shader->regs.pgm_lo, prolog->va >> 8);
       radeon_set_sh_reg(vs_shader->regs.pgm_rsrc1, rsrc1);
-      if (vs_shader->info.merged_shader_compiled_separately)
+      if (vs_shader->info.merged_shader_compiled_separately && vs_shader->info.next_stage == MESA_SHADER_GEOMETRY)
          radeon_set_sh_reg(vs_shader->regs.pgm_rsrc2, rsrc2);
 
       if (pdev->info.gfx_level >= GFX11) {
@@ -10209,7 +10209,7 @@ radv_CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCou
       radv_merge_queue_state(&secondary->queue_state, &primary->queue_state);
 
       if (!secondary->state.render.has_image_views) {
-         if (primary->state.render.active && (primary->state.dirty & RADV_CMD_DIRTY_GFX12_HIZ_WA_STATE)) {
+         if (primary->state.render.active) {
             if (pdev->gfx12_hiz_wa == RADV_GFX12_HIZ_WA_FULL) {
                const struct radv_rendering_state *render = &primary->state.render;
                const struct radv_image_view *iview = render->ds_att.iview;

@@ -256,7 +256,7 @@ static void
 zink_set_max_shader_compiler_threads(struct pipe_screen *pscreen, unsigned max_threads)
 {
    struct zink_screen *screen = zink_screen(pscreen);
-   util_queue_adjust_num_threads(&screen->cache_get_thread, max_threads, false);
+   util_queue_adjust_num_threads(&screen->cache_get_thread, max_threads);
 }
 
 static bool
@@ -1678,6 +1678,14 @@ zink_destroy_screen(struct pipe_screen *pscreen)
 
    util_idalloc_mt_fini(&screen->buffer_ids);
 
+   for (unsigned i = 0; i < 2; i++) {
+      for (unsigned j = 0; j < 2; j++) {
+         util_idalloc_fini(&screen->bindless_handles.table[i][j].slots);
+         _mesa_hash_table_fini(&screen->bindless_handles.table[i][j].handles, NULL);
+      }
+   }
+   simple_mtx_destroy(&screen->bindless_handles.lock);
+
    if (screen->loader_lib)
       util_dl_close(screen->loader_lib);
 
@@ -2473,13 +2481,16 @@ zink_resource_get_dma_buf(struct zink_screen *screen, struct zink_resource *res)
 }
 #endif
 
+/* Returns a semaphore that signals once the dma-buf can be accessed: after
+ * its write fences for a read, or after all of its fences for a write.
+ */
 VkSemaphore
-zink_screen_export_dmabuf_semaphore(struct zink_screen *screen, struct zink_resource *res)
+zink_screen_export_dmabuf_semaphore(struct zink_screen *screen, struct zink_resource *res, bool write)
 {
    VkSemaphore sem = VK_NULL_HANDLE;
 #if defined(HAVE_LIBDRM) && (DETECT_OS_LINUX || DETECT_OS_BSD)
    struct dma_buf_export_sync_file export = {
-      .flags = DMA_BUF_SYNC_RW,
+      .flags = write ? DMA_BUF_SYNC_RW : DMA_BUF_SYNC_READ,
       .fd = -1,
    };
 
@@ -2520,8 +2531,11 @@ zink_screen_export_dmabuf_semaphore(struct zink_screen *screen, struct zink_reso
    return sem;
 }
 
+/* Adds sem to the dma-buf's fences: as a write fence if the access wrote
+ * the buffer, otherwise as a read fence.
+ */
 bool
-zink_screen_import_dmabuf_semaphore(struct zink_screen *screen, struct zink_resource *res, VkSemaphore sem)
+zink_screen_import_dmabuf_semaphore(struct zink_screen *screen, struct zink_resource *res, VkSemaphore sem, bool write)
 {
 #if defined(HAVE_LIBDRM) && (DETECT_OS_LINUX || DETECT_OS_BSD)
    const VkSemaphoreGetFdInfoKHR get_fd_info = {
@@ -2539,7 +2553,7 @@ zink_screen_import_dmabuf_semaphore(struct zink_screen *screen, struct zink_reso
    int fd = zink_resource_get_dma_buf(screen, res);
    if (fd != -1) {
       struct dma_buf_import_sync_file import = {
-         .flags = DMA_BUF_SYNC_RW,
+         .flags = write ? DMA_BUF_SYNC_RW : DMA_BUF_SYNC_READ,
          .fd = sync_file_fd,
       };
       int ioctl_ret = drmIoctl(fd, DMA_BUF_IOCTL_IMPORT_SYNC_FILE, &import);
@@ -3814,6 +3828,16 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
    simple_mtx_init(&screen->dt_lock, mtx_plain);
 
    util_idalloc_mt_init_tc(&screen->buffer_ids);
+
+   simple_mtx_init(&screen->bindless_handles.lock, mtx_plain);
+   for (unsigned i = 0; i < 2; i++) {
+      for (unsigned j = 0; j < 2; j++) {
+         _mesa_hash_table_init(&screen->bindless_handles.table[i][j].handles, NULL, _mesa_hash_pointer, _mesa_key_pointer_equal);
+         /* allocate 1024 slots and reserve slot 0 */
+         util_idalloc_init(&screen->bindless_handles.table[i][j].slots, ZINK_MAX_BINDLESS_HANDLES);
+         util_idalloc_alloc(&screen->bindless_handles.table[i][j].slots);
+      }
+   }
 
    simple_mtx_init(&screen->semaphores_lock, mtx_plain);
    util_dynarray_init(&screen->semaphores, NULL);

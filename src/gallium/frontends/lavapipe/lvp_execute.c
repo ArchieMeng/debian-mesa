@@ -29,9 +29,14 @@
 #include "pipe/p_context.h"
 #include "pipe/p_state.h"
 #include "lvp_conv.h"
+#include "lp_context.h"
+#include "lp_query.h"
+#include "lp_state.h"
+#include "lp_texture.h"
 
 #include "pipe/p_shader_tokens.h"
 #include "tgsi/tgsi_from_mesa.h"
+
 
 #include "util/blend.h"
 #include "util/format/u_format.h"
@@ -2666,31 +2671,34 @@ static void handle_copy_image(struct vk_cmd_queue_entry *cmd,
             dst_format = find_depth_format(src_image->vk.format, region->srcSubresource.aspectMask);
          else
             src_format = find_depth_format(dst_image->vk.format, region->dstSubresource.aspectMask);
-         struct pipe_transfer *src_t, *dst_t;
-         void *src_data, *dst_data;
-         src_data = state->pctx->texture_map(state->pctx,
-                                             src_image->planes[src_plane].bo,
-                                             region->srcSubresource.mipLevel,
-                                             PIPE_MAP_READ,
-                                             &src_box,
-                                             &src_t);
-         dst_data = state->pctx->texture_map(state->pctx,
-                                             dst_image->planes[dst_plane].bo,
-                                             region->dstSubresource.mipLevel,
-                                             PIPE_MAP_WRITE,
-                                             &dst_box,
-                                             &dst_t);
-         lvp_image_copy_depth_box(dst_data, dst_format,
-                        dst_t->stride, dst_t->layer_stride,
-                        0, 0, 0,
-                        region->extent.width,
-                        region->extent.height,
-                        dst_box.depth,
-                        src_data, src_format,
-                        src_t->stride, src_t->layer_stride,
-                        0, 0, 0);
-         state->pctx->texture_unmap(state->pctx, src_t);
-         state->pctx->texture_unmap(state->pctx, dst_t);
+         unsigned samples = util_res_sample_count(src_image->planes[src_plane].bo);
+         for (unsigned s = 0; s < samples; s++) {
+            struct pipe_transfer *src_t, *dst_t;
+            void *src_data, *dst_data;
+            src_data = llvmpipe_transfer_map_ms(state->pctx,
+                                                src_image->planes[src_plane].bo,
+                                                region->srcSubresource.mipLevel,
+                                                PIPE_MAP_READ, s,
+                                                &src_box,
+                                                &src_t);
+            dst_data = llvmpipe_transfer_map_ms(state->pctx,
+                                                dst_image->planes[dst_plane].bo,
+                                                region->dstSubresource.mipLevel,
+                                                PIPE_MAP_WRITE, s,
+                                                &dst_box,
+                                                &dst_t);
+            lvp_image_copy_depth_box(dst_data, dst_format,
+                           dst_t->stride, dst_t->layer_stride,
+                           0, 0, 0,
+                           region->extent.width,
+                           region->extent.height,
+                           dst_box.depth,
+                           src_data, src_format,
+                           src_t->stride, src_t->layer_stride,
+                           0, 0, 0);
+            state->pctx->texture_unmap(state->pctx, src_t);
+            state->pctx->texture_unmap(state->pctx, dst_t);
+         }
       } else {
          state->pctx->resource_copy_region(state->pctx, dst_image->planes[dst_plane].bo,
                                           region->dstSubresource.mipLevel,
@@ -4783,7 +4791,7 @@ handle_execute_generated_commands_ext(struct vk_cmd_queue_entry *cmd, struct ren
    struct list_head *list = (void*)p;
 
    struct vk_cmd_queue_entry *exec_cmd = list_first_entry(list, struct vk_cmd_queue_entry, cmd_link);
-   if (exec_cmd)
+   if (exec_cmd && llvmpipe_check_render_cond(llvmpipe_context(state->pctx)))
       lvp_execute_cmd_buffer(list, state, print_cmds);
 }
 

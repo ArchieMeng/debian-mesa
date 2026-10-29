@@ -738,9 +738,9 @@ _mesa_program_resource_find_name(struct gl_shader_program *shProg,
        *    string would exactly match the name of the variable if the suffix
        *    "[0]" were appended to the string; [...]"
        */
-      /* Remove array's index from interface block name comparison only if
-       * array's index is zero and the resulting string length is the same
-       * than the provided name's length.
+      /* Also match a name that equals the resource name without its
+       * trailing "[0]", unless that resource is reported with another "[0]"
+       * appended: "a[0]" of "a[2][2]" is reported as "a[0][0]".
        */
       int length_without_array_index =
          rname.last_square_bracket >= 0 ? rname.last_square_bracket : rname.length;
@@ -750,16 +750,16 @@ _mesa_program_resource_find_name(struct gl_shader_program *shProg,
       if (len >= rname.length && strncmp(rname.string, name, rname.length) == 0)
          found = true;
       else if (rname_has_array_index_zero &&
-               strncmp(rname.string, name, length_without_array_index) == 0)
-         found = true;
+               strncmp(rname.string, name, length_without_array_index) == 0 &&
+               (int)_mesa_program_resource_name_length_array(res) == rname.length)
+         return res;
 
       if (found) {
          switch (programInterface) {
          case GL_UNIFORM_BLOCK:
          case GL_SHADER_STORAGE_BLOCK:
             /* Basename match, check if array or struct. */
-            if (rname_has_array_index_zero ||
-                name[rname.length] == '\0' ||
+            if (name[rname.length] == '\0' ||
                 name[rname.length] == '[' ||
                 name[rname.length] == '.') {
                return res;

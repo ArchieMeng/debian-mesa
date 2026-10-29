@@ -599,6 +599,9 @@ vn_ring_submission_can_direct(const struct vn_ring *ring,
    return vn_cs_encoder_get_len(cs) <= ring->direct_size;
 }
 
+static void
+vn_ring_roundtrip_locked(struct vn_ring *ring);
+
 static struct vn_cs_encoder *
 vn_ring_cs_upload_locked(struct vn_ring *ring, const struct vn_cs_encoder *cs)
 {
@@ -619,7 +622,7 @@ vn_ring_cs_upload_locked(struct vn_ring *ring, const struct vn_cs_encoder *cs)
    vn_cs_encoder_commit(upload);
 
    if (vn_cs_encoder_needs_roundtrip(upload))
-      vn_ring_roundtrip(ring);
+      vn_ring_roundtrip_locked(ring);
 
    return upload;
 }
@@ -662,6 +665,21 @@ vn_ring_submit_locked(struct vn_ring *ring,
       *ring_seqno = seqno;
 
    return VK_SUCCESS;
+}
+
+static void
+vn_ring_roundtrip_locked(struct vn_ring *ring)
+{
+   uint64_t roundtrip_seqno;
+   if (vn_ring_submit_roundtrip(ring, &roundtrip_seqno) != VK_SUCCESS)
+      return;
+
+   uint32_t local_data[8];
+   struct vn_cs_encoder local_enc =
+      VN_CS_ENCODER_INITIALIZER_LOCAL(local_data, sizeof(local_data));
+   vn_encode_vkWaitVirtqueueSeqnoMESA(&local_enc, 0, roundtrip_seqno);
+   vn_cs_encoder_commit(&local_enc);
+   vn_ring_submit_locked(ring, &local_enc, NULL, NULL);
 }
 
 VkResult

@@ -406,16 +406,16 @@ etna_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
       return;
    }
 
-   /* Update any derived state */
-   if (ctx->dirty && !etna_state_update(ctx))
-      return;
-
    u_foreach_bit(i, ctx->active_sampler_views) {
       /* If a texture was modified since the last update, we need to clear the
        * texture cache and possibly resolve TS or a sampler compatible sibling.
        */
       etna_update_sampler_source(ctx->sampler_view[i], i);
    }
+
+   /* Update any derived state */
+   if (ctx->dirty && !etna_state_update(ctx))
+      return;
 
    /* Now that we know which states need to be emitted for this draw, reserve
     * the space for them in the cmdstream. This will possibly cause a flush of

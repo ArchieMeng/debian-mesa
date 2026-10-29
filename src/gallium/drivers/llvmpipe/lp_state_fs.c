@@ -617,8 +617,6 @@ fs_fb_fetch(const struct lp_build_fs_iface *iface,
    }
 
    unsigned block_size = bld->type.length;
-   unsigned block_height = key->resource_1d ? 1 : 2;
-   unsigned block_width = block_size / block_height;
 
    if (key->multisample) {
       LLVMValueRef sample_stride;
@@ -639,36 +637,31 @@ fs_fb_fetch(const struct lp_build_fs_iface *iface,
                               buf_ptr, &sample_offset, 1, "");
    }
 
-   /* fragment shader executes on 4x4 blocks. depending on vector width it can
-    * execute 2 or 4 iterations.  only move to the next row once the top row
-    * has completed 8 wide 1 iteration, 4 wide 2 iterations */
+   /* A 4x4 stamp takes four or two invocations at 4, 8 lanes.
+    * Four-lane invocations advance horizontally after the first quad,
+    * including for 1D resources, before advancing to the next pair of rows.
+    */
    LLVMValueRef x_offset = NULL, y_offset = NULL;
-   if (!key->resource_1d) {
-      LLVMValueRef counter = fs_iface->loop_state->counter;
+   LLVMValueRef counter = fs_iface->loop_state->counter;
 
-      if (block_size == 4) {
-         x_offset = LLVMBuildShl(builder,
-                                 LLVMBuildAnd(builder, fs_iface->loop_state->counter, lp_build_const_int32(gallivm, 1), ""),
-                                 lp_build_const_int32(gallivm, 1), "");
-         counter = LLVMBuildLShr(builder, fs_iface->loop_state->counter, lp_build_const_int32(gallivm, 1), "");
-      }
+   if (block_size == 4) {
+      x_offset = LLVMBuildShl(builder,
+                              LLVMBuildAnd(builder, fs_iface->loop_state->counter, lp_build_const_int32(gallivm, 1), ""),
+                              lp_build_const_int32(gallivm, 1), "");
+      counter = LLVMBuildLShr(builder, fs_iface->loop_state->counter, lp_build_const_int32(gallivm, 1), "");
+   }
+   if (!key->resource_1d) {
       y_offset = LLVMBuildMul(builder, counter, lp_build_const_int32(gallivm, 2), "");
    }
 
    LLVMValueRef offsets[4 * 4];
    for (unsigned i = 0; i < block_size; i++) {
-      unsigned x = i % block_width;
-      unsigned y = i / block_width;
-
-      if (block_size == 8) {
-         /* remap the raw slots into the fragment shader execution mode. */
-         /* this math took me way too long to work out, I'm sure it's
-          * overkill.
-          */
-         x = (i & 1) + ((i >> 2) << 1);
-         if (!key->resource_1d)
-            y = (i & 2) >> 1;
-      }
+      /* Lane bits 0/1 select a pixel in a quad; bits 2/3 select the quad.
+       * For 1D, repeat the top row for helper lanes rather than reading
+       * past the end of the row.
+       */
+      unsigned x = (i & 1) + ((i & 4) >> 1);
+      unsigned y = key->resource_1d ? 0 : ((i & 2) >> 1) + ((i & 8) >> 2);
 
       LLVMValueRef x_val;
       if (x_offset) {

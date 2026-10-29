@@ -840,7 +840,8 @@ va_lower_tex(nir_builder *b, nir_tex_instr *tex, uint64_t gpu_id)
        * On v9 and v10, narrow_array_index is a U16 in bits [31:16].  However,
        * it does not appear to bounds-check correctly so we can't use it.
        */
-      if (pan_arch(gpu_id) >= 11 && scalar_is_imm_i4(arr_idx, false)) {
+      if (pan_arch(gpu_id) >= 11 && !flags.wide_indices &&
+          scalar_is_imm_i4(arr_idx, false)) {
          narrow |= scalar_as_imm_i4(arr_idx) << 12;
       } else {
          sr[VA_TEX_SR_ARRAY] = nir_mov_scalar(b, arr_idx);

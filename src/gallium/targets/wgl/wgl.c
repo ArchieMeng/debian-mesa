@@ -75,6 +75,9 @@ static bool use_zink = false;
 
 static const char *created_driver_name = NULL;
 
+/* this must outlive later option lookups, which reuse the getenv buffer on windows */
+DEBUG_GET_ONCE_OPTION(gallium_driver, "GALLIUM_DRIVER", "")
+
 static struct pipe_screen *
 wgl_screen_create_by_name(HDC hDC, const char* driver, struct sw_winsys *winsys)
 {
@@ -121,7 +124,7 @@ wgl_screen_create(HDC hDC)
       return NULL;
 
    const char *const drivers[] = {
-      debug_get_option("GALLIUM_DRIVER", ""),
+      debug_get_option_gallium_driver(),
 #ifdef GALLIUM_D3D12
       sw_only ? "" : "d3d12",
 #endif

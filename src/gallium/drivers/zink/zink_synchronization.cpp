@@ -150,10 +150,12 @@ zink_get_cmdbuf(struct zink_context *ctx, struct zink_resource *src, struct zink
    unordered_exec &= check_unordered_exec(ctx, src, false) &&
                      check_unordered_exec(ctx, dst, true);
 
+   /* only update state if usage hasn't yet been set to this cmdbuf to avoid desync */
    if (src)
-      src->obj->unordered_read = unordered_exec;
+      src->obj->unordered_read = unordered_exec && (!zink_resource_usage_matches(src, ctx->bs) || src->obj->unordered_read);
    if (dst)
-      dst->obj->unordered_write = unordered_exec;
+      dst->obj->unordered_write = unordered_exec && (!zink_resource_usage_matches(dst, ctx->bs) || dst->obj->unordered_write);
+
 
    if (!unordered_exec || ctx->unordered_blitting)
       zink_batch_no_rp(ctx);
@@ -478,15 +480,6 @@ zink_resource_image_barrier(struct zink_context *ctx, struct zink_resource *res,
          cdt->swapchain->images[res->obj->dt_idx].layout = res->layout;
       }
    }
-   if (res->obj->exportable_dmabuf && queue_import) {
-      simple_mtx_lock(&ctx->bs->exportable_lock);
-      for (struct zink_resource *r = res; r; r = zink_resource(r->base.b.next)) {
-         VkSemaphore sem = zink_screen_export_dmabuf_semaphore(zink_screen(ctx->base.screen), r);
-         if (sem)
-            util_dynarray_append(&ctx->bs->fd_wait_semaphores, sem);
-      }
-      simple_mtx_unlock(&ctx->bs->exportable_lock);
-   }
 }
 
 bool
@@ -508,6 +501,9 @@ zink_check_valid_buffer_src_access(struct zink_context *ctx, struct zink_resourc
 void
 zink_resource_image_transfer_dst_barrier(struct zink_context *ctx, struct zink_resource *res, unsigned level, const struct pipe_box *box, bool unsync)
 {
+   /* the msrtss emulation's samples no longer match the image, so reload them before the next draw */
+   if (res->transient && res->transient->base.b.nr_samples > 1)
+      res->transient->valid = false;
    if (res->obj->copies_need_reset)
       zink_resource_copies_reset(res);
    /* skip TRANSFER_DST barrier if no intersection from previous copies */
@@ -723,6 +719,8 @@ zink_resource_image_barrier_general(struct zink_context *ctx, struct zink_resour
    }
 
    /* this is just a synchronization barrier with GENERAL layout: use memory barrier for better granularity */
+   if (zink_resource_access_is_write(flags) && zink_is_swapchain(res))
+      zink_kopper_set_readback_needs_update(res);
    zink_resource_memory_barrier<barrier_KHR_synchronzation2, false, true>(ctx, res, flags, pipeline);
 }
 

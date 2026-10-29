@@ -342,7 +342,10 @@ vn_tls_get_ring(struct vn_instance *instance)
    mtx_init(&tls_ring->mutex, mtx_plain);
    tls_ring->instance = instance;
    list_add(&tls_ring->tls_head, &tls->tls_rings);
+
+   simple_mtx_lock(&instance->ring.tls_rings_mutex);
    list_add(&tls_ring->vk_head, &instance->ring.tls_rings);
+   simple_mtx_unlock(&instance->ring.tls_rings_mutex);
 
    return tls_ring->ring;
 }

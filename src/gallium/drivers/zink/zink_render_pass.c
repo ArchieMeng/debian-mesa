@@ -202,6 +202,8 @@ zink_render_attachment_shadow(struct zink_context *ctx, uint32_t attachment_shad
       struct pipe_surface dst_view = ctx->fb_state.cbufs[i];
       dst_view.texture = &transient->base.b;
       dst_view.nr_samples = 0;
+      if (transient->base.b.nr_samples > 1)
+         dst_view.level = 0;
       struct pipe_sampler_view src_templ, *src_view;
       struct pipe_box dstbox;
 
