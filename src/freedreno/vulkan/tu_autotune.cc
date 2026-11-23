@@ -971,7 +971,7 @@ struct tu_autotune::rp_history {
    uint32_t duplicates; /* The amount of times we've seen this RP, used for identifying repeated RPs. */
 
    std::atomic<uint32_t> refcount = 0; /* Reference count to prevent deletion when active. */
-   std::atomic<uint64_t> last_use_ts;  /* Last time the reference count was updated, in monotonic nanoseconds. */
+   std::atomic<uint64_t> last_use_ts;  /* Last time a reference was dropped, in monotonic nanoseconds. */
 
    rp_history(uint64_t hash): hash(hash), last_use_ts(os_time_get_nano()), profiled(hash)
    {
@@ -1331,14 +1331,15 @@ tu_autotune::rp_history_handle::~rp_history_handle()
       return;
 
    history->last_use_ts.store(os_time_get_nano(), std::memory_order_relaxed);
-   ASSERTED uint32_t old_refcount = history->refcount.fetch_sub(1, std::memory_order_relaxed);
+
+   /* Release, so that the reaper can't free the history before the accesses through this handle. */
+   ASSERTED uint32_t old_refcount = history->refcount.fetch_sub(1, std::memory_order_release);
    assert(old_refcount != 0); /* Underflow check. */
 }
 
 tu_autotune::rp_history_handle::rp_history_handle(rp_history &history): history(&history)
 {
    history.refcount.fetch_add(1, std::memory_order_relaxed);
-   history.last_use_ts.store(os_time_get_nano(), std::memory_order_relaxed);
 }
 
 tu_autotune::rp_history_handle
@@ -1355,9 +1356,9 @@ tu_autotune::find_rp_history(const rp_key &key)
 tu_autotune::rp_history_handle
 tu_autotune::find_or_create_rp_history(const rp_key &key)
 {
-   rp_history *existing = find_rp_history(key);
+   rp_history_handle existing = find_rp_history(key);
    if (existing)
-      return *existing;
+      return existing;
 
    /* If we reach here, we have to create a new history. */
    std::unique_lock lock(rp_mutex);
@@ -1415,7 +1416,7 @@ tu_autotune::reap_old_rp_histories()
 
    for (auto it = candidates.begin(); it != partition_end; ++it) {
       rp_history &history = (*it)->second;
-      if (history.refcount.load(std::memory_order_relaxed) == 0) {
+      if (history.refcount.load(std::memory_order_acquire) == 0) {
          at_log_base("reaping RP history %016" PRIx64, history.hash);
          rp_histories.erase(*it);
       }
@@ -1434,6 +1435,17 @@ bool
 tu_autotune::supports_preempt_latency_tracking() const
 {
    return supported_mod_flags & (uint32_t) mod_flag::PREEMPT_OPTIMIZE;
+}
+
+void
+tu_autotune::rp_latency_tracker::remove_old_timestamps(uint64_t now)
+{
+   constexpr uint64_t LATENCY_WINDOW_NS = 2'000'000'000; /* 2s */
+
+   recent_latency_timestamps_ns.erase(
+      std::remove_if(recent_latency_timestamps_ns.begin(), recent_latency_timestamps_ns.end(),
+                     [&](uint64_t ts) { return (now - ts) > LATENCY_WINDOW_NS; }),
+      recent_latency_timestamps_ns.end());
 }
 
 void
@@ -1468,6 +1480,7 @@ tu_autotune::cleanup_latency_tracking()
       }
 
       /* Remove tracking entry if no recent latency events and flag is cleared. */
+      tracker.remove_old_timestamps(now);
       if (tracker.recent_latency_timestamps_ns.empty() && !tracker.info.seen_latency_spike) {
          it = rp_latency_tracking.erase(it);
       } else {
@@ -1521,8 +1534,7 @@ tu_autotune::process_entries()
 void
 tu_autotune::process_batch_preempt_data(rp_entry_batch &batch)
 {
-   constexpr uint64_t LATENCY_THRESHOLD_US = 1500;       /* 1.5ms */
-   constexpr uint64_t LATENCY_WINDOW_NS = 2'000'000'000; /* 2s */
+   constexpr uint64_t LATENCY_THRESHOLD_US = 1500; /* 1.5ms */
 
    if (!batch.preempt_latency.allocated)
       return;
@@ -1560,12 +1572,7 @@ tu_autotune::process_batch_preempt_data(rp_entry_batch &batch)
 
    auto &tracker = rp_latency_tracking[gpu_data.preemption_latency_rp_hash];
    tracker.recent_latency_timestamps_ns.push_back(now);
-
-   /* Remove old timestamps outside the window. */
-   tracker.recent_latency_timestamps_ns.erase(
-      std::remove_if(tracker.recent_latency_timestamps_ns.begin(), tracker.recent_latency_timestamps_ns.end(),
-                     [&](uint64_t ts) { return (now - ts) > LATENCY_WINDOW_NS; }),
-      tracker.recent_latency_timestamps_ns.end());
+   tracker.remove_old_timestamps(now);
 
    /* Mark as latency-sensitive if 2+ occurrences in window. */
    if (tracker.recent_latency_timestamps_ns.size() >= 2) {
@@ -1844,7 +1851,8 @@ tu_autotune::get_optimal_mode(struct tu_cmd_buffer *cmd_buffer, rp_ctx_t *rp_ctx
    else
       key = cb_ctx.generate_rp_key(pass, framebuffer, cmd_buffer);
 
-   rp_history &history = *find_or_create_rp_history(key);
+   rp_history_handle history_handle = find_or_create_rp_history(key);
+   rp_history &history = *history_handle;
    if (config.test(mod_flag::PREEMPT_OPTIMIZE)) {
       if (!latency_info && !key_opt)
          latency_info = get_rp_latency_info(key.hash, true);
@@ -1864,7 +1872,7 @@ tu_autotune::get_optimal_mode(struct tu_cmd_buffer *cmd_buffer, rp_ctx_t *rp_ctx
          history.preempt_optimize.mark_as_latency_sensitive();
       }
    }
-   *rp_ctx = cb_ctx.attach_rp_entry(device, history, config, rp_state->drawcall_count);
+   *rp_ctx = cb_ctx.attach_rp_entry(device, std::move(history_handle), config, rp_state->drawcall_count);
 
    if (config.test(mod_flag::PREEMPT_OPTIMIZE) && history.preempt_optimize.is_latency_sensitive()) {
       /* Try to mitigate the risk of high preemption latency by always using GMEM, which should break up any larger

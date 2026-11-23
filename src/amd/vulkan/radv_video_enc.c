@@ -1945,7 +1945,8 @@ radv_enc_qp_map_input(struct radv_cmd_buffer *cmd_buffer, const struct VkVideoEn
    if (!(enc_info->flags & VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR) || !qp_map)
       return;
 
-   const uint64_t va_in = qp_map->bindings[0].addr;
+   const uint64_t va_in = qp_map->bindings[0].addr + qp_map->planes[0].surface.u.gfx9.surf_offset +
+                          qp_map_view->vk.base_array_layer * qp_map->planes[0].surface.u.gfx9.surf_slice_size;
    radv_cs_add_buffer(device->ws, cs->b, qp_map->bindings[0].bo);
 
    const uint64_t va_out =
@@ -2002,7 +2003,8 @@ radv_enc_qp_map(struct radv_cmd_buffer *cmd_buffer, const struct VkVideoEncodeIn
          const uint32_t qp_map_type =
             rc_method == RENCODE_RATE_CONTROL_METHOD_NONE ? RENCODE_QP_MAP_TYPE_DELTA : RENCODE_QP_MAP_TYPE_MAP_PA;
          radv_cs_add_buffer(device->ws, cmd_buffer->cs->b, qp_map->bindings[0].bo);
-         const uint64_t va = qp_map->bindings[0].addr;
+         const uint64_t va = qp_map->bindings[0].addr + qp_map->planes[0].surface.u.gfx9.surf_offset +
+                             qp_map_view->vk.base_array_layer * qp_map->planes[0].surface.u.gfx9.surf_slice_size;
          RADEON_ENC_CS(qp_map_type);
          RADEON_ENC_CS(va >> 32);
          RADEON_ENC_CS(va & 0xffffffff);
@@ -3674,7 +3676,7 @@ radv_video_get_encode_session_memory_requirements(struct radv_device *device, st
       vk_outarray_append_typed(VkVideoSessionMemoryRequirementsKHR, &out, m)
       {
          m->memoryBindIndex = RADV_BIND_ENCODE_QP_MAP;
-         m->memoryRequirements.size = map_width * map_height * sizeof(int16_t);
+         m->memoryRequirements.size = ALIGN_POT(map_width, 2) * map_height * sizeof(int16_t);
          m->memoryRequirements.alignment = 0;
          m->memoryRequirements.memoryTypeBits = memory_type_bits;
       }

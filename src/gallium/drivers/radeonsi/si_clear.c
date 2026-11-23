@@ -777,6 +777,7 @@ static void si_fast_clear(struct si_context *sctx, unsigned *buffers,
 
          /* Update the framebuffer state to reflect the change. */
          sctx->framebuffer.DB_has_shader_readable_metadata = true;
+         sctx->framebuffer.DB_meta_pipe_misaligned = zstex->htile_pipe_misaligned;
          sctx->framebuffer.dirty_zsbuf = true;
          si_mark_atom_dirty(sctx, &sctx->atoms.s.framebuffer);
 
@@ -907,7 +908,7 @@ static void si_fast_clear(struct si_context *sctx, unsigned *buffers,
    if (num_clears) {
       si_barrier_before_image_fast_clear(sctx, clear_types);
       si_execute_clears(sctx, info, num_clears, sctx->render_cond_enabled);
-      si_barrier_after_image_fast_clear(sctx);
+      si_barrier_after_image_fast_clear(sctx, clear_types);
    }
 }
 
@@ -1247,7 +1248,7 @@ bool si_compute_fast_clear_image(struct si_context *sctx, struct pipe_resource *
    assert(num_clears <= ARRAY_SIZE(info));
    si_barrier_before_image_fast_clear(sctx, clear_types);
    si_execute_clears(sctx, info, num_clears, render_condition_enable);
-   si_barrier_after_image_fast_clear(sctx);
+   si_barrier_after_image_fast_clear(sctx, clear_types);
    return true;
 }
 

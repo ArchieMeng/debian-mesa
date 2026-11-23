@@ -806,14 +806,15 @@ void si_fb_barrier_after_rendering(struct si_context *sctx, unsigned flags)
    if (flags & SI_FB_BARRIER_SYNC_DB && sctx->framebuffer.state.zsbuf.texture) {
       /* DB caches are flushed on demand (using si_decompress_textures) except the cases below. */
       if (sctx->gfx_level >= GFX12) {
-         si_make_DB_shader_coherent(sctx, sctx->framebuffer.nr_samples, true, false);
+         si_make_DB_shader_coherent(sctx, sctx->framebuffer.nr_samples, true, false, false);
       } else if (sctx->generate_mipmap_for_depth) {
          /* u_blitter doesn't invoke depth decompression when it does multiple blits in a row,
           * but the only case when it matters for DB is when doing generate_mipmap, which writes Z,
           * which is always uncompressed. So here we flush DB manually between individual
           * generate_mipmap blits.
           */
-         si_make_DB_shader_coherent(sctx, 1, false, sctx->framebuffer.DB_has_shader_readable_metadata);
+         si_make_DB_shader_coherent(sctx, 1, false, sctx->framebuffer.DB_has_shader_readable_metadata,
+                                    sctx->framebuffer.DB_meta_pipe_misaligned);
       } else if (sctx->screen->info.family == CHIP_NAVI33) {
          struct si_texture *old_ztex = (struct si_texture *)sctx->framebuffer.state.zsbuf.texture;
 
@@ -853,7 +854,8 @@ void si_barrier_before_image_fast_clear(struct si_context *sctx, unsigned types)
 
    if (types & SI_CLEAR_TYPE_HTILE) {
       si_make_DB_shader_coherent(sctx, sctx->framebuffer.nr_samples, sctx->framebuffer.has_stencil,
-                                 sctx->framebuffer.DB_has_shader_readable_metadata);
+                                 sctx->framebuffer.DB_has_shader_readable_metadata,
+                                 sctx->framebuffer.DB_meta_pipe_misaligned);
    }
 
    /* GFX6-8: CB and DB don't use L2. */
@@ -863,10 +865,19 @@ void si_barrier_before_image_fast_clear(struct si_context *sctx, unsigned types)
    si_set_barrier_flags(sctx, new_barriers);
 }
 
-void si_barrier_after_image_fast_clear(struct si_context *sctx)
+void si_barrier_after_image_fast_clear(struct si_context *sctx, unsigned types)
 {
    /* Wait for idle. */
    unsigned new_barriers = SI_BARRIER_SYNC_CS;
+
+   /* If the render backends and the L2 cache channels are non-coherent, CB and DCC image
+    * stores don't see the CMASK/DCC that the clear's compute shader wrote until L2 is
+    * written back. si_barrier_before_image_fast_clear already invalidated L2.
+    */
+   if (types & (SI_CLEAR_TYPE_CMASK | SI_CLEAR_TYPE_DCC) &&
+       sctx->gfx_level >= GFX10 && sctx->gfx_level < GFX12 &&
+       sctx->screen->info.tcc_rb_non_coherent)
+      new_barriers |= SI_BARRIER_WB_L2;
 
    /* GFX6-8: CB and DB don't use L2. */
    if (sctx->gfx_level <= GFX8)

@@ -802,6 +802,8 @@ dri2_create_screen(_EGLDisplay *disp)
             dri2_dpy->dri_screen_display_gpu = driCreateNewScreen3(
                0, dri2_dpy->fd_display_gpu, dri2_dpy->loader_extensions,
                type, &dri2_dpy->driver_configs, false, dri2_dpy->multibuffers_available, disp);
+            driDestroyConfigs(dri2_dpy->driver_configs);
+            dri2_dpy->driver_configs = NULL;
          }
          free(driver_name_display_gpu);
       }
@@ -1013,11 +1015,8 @@ dri2_display_destroy(_EGLDisplay *disp)
     * the ones from the gbm device. As such the gbm itself is responsible
     * for the cleanup.
     */
-   if (disp->Platform != _EGL_PLATFORM_DRM && dri2_dpy->driver_configs) {
-      for (unsigned i = 0; dri2_dpy->driver_configs[i]; i++)
-         free((struct dri_config *)dri2_dpy->driver_configs[i]);
-      free(dri2_dpy->driver_configs);
-   }
+   if (disp->Platform != _EGL_PLATFORM_DRM)
+      driDestroyConfigs(dri2_dpy->driver_configs);
    mtx_destroy(&dri2_dpy->lock);
    free(dri2_dpy);
    disp->DriverData = NULL;

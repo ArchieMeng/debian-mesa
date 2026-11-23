@@ -2306,6 +2306,7 @@ vn_image_get_image_format_key(
     */
    if (format_info->pNext) {
       vk_foreach_struct_const(src, format_info->pNext) {
+         _mesa_blake3_update(&blake3_ctx, &src->sType, sizeof(src->sType));
          switch (src->sType) {
          case VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_CONTROL_EXT: {
             VkImageCompressionControlEXT *compression_control =
@@ -3014,6 +3015,12 @@ vn_GetPhysicalDeviceDescriptorSizeEXT(VkPhysicalDevice physicalDevice,
          struct vn_ring *ring = physical_dev->instance->ring.ring;
 
          for (uint32_t i = 0; i < ARRAY_SIZE(vn_descriptor_heap_types); i++) {
+            if (vn_descriptor_heap_types[i] ==
+                   VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR &&
+                !physical_dev->base.vk.supported_extensions
+                    .KHR_acceleration_structure)
+               continue;
+
             const enum vn_descriptor_type type =
                vn_descriptor_type(vn_descriptor_heap_types[i]);
             physical_dev->descriptor_sizes[type] =

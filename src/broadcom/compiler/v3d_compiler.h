@@ -624,6 +624,7 @@ struct v3d_interp_input {
    struct qreg vp;
    struct qreg C;
    unsigned mode; /* interpolation mode */
+   bool centroid;
 };
 
 struct v3d_ra_node_info {
@@ -1152,6 +1153,12 @@ const struct v3d_compiler *v3d_compiler_init(const struct v3d_device_info *devin
                                              uint32_t max_inline_uniform_buffers);
 void v3d_compiler_free(const struct v3d_compiler *compiler);
 void v3d_optimize_nir(struct v3d_compile *c, struct nir_shader *s);
+
+/* The QPU prefetches the instruction after the one it executes, so the
+ * buffer holding the shader code needs this much space after the last
+ * instruction, or the prefetch can fall on an unmapped page.
+ */
+#define V3D_QPU_PREFETCH_PAD sizeof(uint64_t)
 
 uint64_t *v3d_compile(const struct v3d_compiler *compiler,
                       struct v3d_key *key,

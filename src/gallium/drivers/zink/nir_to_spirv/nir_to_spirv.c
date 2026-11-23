@@ -2002,6 +2002,13 @@ emit_alu(struct ntv_context *ctx, nir_alu_instr *alu)
       atype = nir_type_float; \
       break;
 
+#define BUILTIN_UNOPU(nir_op, spirv_op) \
+   case nir_op: \
+      assert(nir_op_infos[alu->op].num_inputs == 1); \
+      result = emit_builtin_unop(ctx, spirv_op, get_def_type(ctx, &alu->def, nir_type_uint), src[0]); \
+      atype = nir_type_uint; \
+      break;
+
    BUILTIN_UNOP(nir_op_iabs, GLSLstd450SAbs)
    BUILTIN_UNOP(nir_op_fabs, GLSLstd450FAbs)
    BUILTIN_UNOP(nir_op_fsqrt, GLSLstd450Sqrt)
@@ -2021,13 +2028,18 @@ emit_alu(struct ntv_context *ctx, nir_alu_instr *alu)
    BUILTIN_UNOP(nir_op_find_lsb, GLSLstd450FindILsb)
    BUILTIN_UNOP(nir_op_ifind_msb, GLSLstd450FindSMsb)
 
-   case nir_op_pack_half_2x16:
-      assert(nir_op_infos[alu->op].num_inputs == 1);
-      result = emit_builtin_unop(ctx, GLSLstd450PackHalf2x16, get_def_type(ctx, &alu->def, nir_type_uint), src[0]);
-      break;
-
+   BUILTIN_UNOPU(nir_op_pack_half_2x16, GLSLstd450PackHalf2x16)
+   BUILTIN_UNOPU(nir_op_pack_snorm_2x16, GLSLstd450PackSnorm2x16)
+   BUILTIN_UNOPU(nir_op_pack_unorm_2x16, GLSLstd450PackUnorm2x16)
+   BUILTIN_UNOPU(nir_op_pack_snorm_4x8, GLSLstd450PackSnorm4x8)
+   BUILTIN_UNOPU(nir_op_pack_unorm_4x8, GLSLstd450PackUnorm4x8)
+   BUILTIN_UNOPF(nir_op_unpack_snorm_2x16, GLSLstd450UnpackSnorm2x16)
+   BUILTIN_UNOPF(nir_op_unpack_unorm_2x16, GLSLstd450UnpackUnorm2x16)
+   BUILTIN_UNOPF(nir_op_unpack_snorm_4x8, GLSLstd450UnpackSnorm4x8)
+   BUILTIN_UNOPF(nir_op_unpack_unorm_4x8, GLSLstd450UnpackUnorm4x8)
    BUILTIN_UNOPF(nir_op_unpack_half_2x16, GLSLstd450UnpackHalf2x16)
 #undef BUILTIN_UNOP
+#undef BUILTIN_UNOPU
 #undef BUILTIN_UNOPF
 
    case nir_op_frcp:
@@ -3642,9 +3654,14 @@ emit_shuffle(struct ntv_context *ctx, nir_intrinsic_instr *intr)
               nir_intrinsic_infos[intr->intrinsic].name);
       UNREACHABLE("unhandled intrinsic");
    }
-   nir_alu_type atype, unused;
+   nir_alu_type atype, btype;
    SpvId src0 = get_src(ctx, &intr->src[0], &atype);
-   SpvId src1 = get_src(ctx, &intr->src[1], &unused);
+   SpvId src1 = get_src(ctx, &intr->src[1], &btype);
+
+   if (btype != nir_type_uint) {
+      SpvId uint_type = get_uvec_type(ctx, intr->src[1].ssa->bit_size, 1);
+      src1 = emit_bitcast(ctx, uint_type, src1);
+   }
 
    SpvId result = spirv_builder_emit_binop_subgroup(&ctx->builder, op, get_def_type(ctx, intr->src[0].ssa, atype), src0, src1);
    store_def(ctx, intr->def.index, result, atype);
