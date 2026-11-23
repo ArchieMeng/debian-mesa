@@ -1,4 +1,4 @@
-mesa (26.2.7-1) UNRELEASED; urgency=medium
+mesa (26.2.7-1) unstable; urgency=medium
 
   * New upstream release.
   * debian/patches/meson-check-TLSDESC-support-with-a-shared-library.patch:
@@ -8,7 +8,7 @@ mesa (26.2.7-1) UNRELEASED; urgency=medium
   * d/p/do-not-use-D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1.patch:
     - Fix FTBFS on the d3d12 gallium driver. Closes: #1154462.
 
- -- Emilio Pozuelo Monfort <pochu@debian.org>  Mon, 23 Nov 2026 18:01:24 +0100
+ -- Emilio Pozuelo Monfort <pochu@debian.org>  Mon, 23 Nov 2026 18:36:51 +0100
 
 mesa (26.2.6-1) unstable; urgency=medium
 
