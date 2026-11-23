@@ -2,3 +2,4 @@ path_max.diff
 src_glx_dri_common.h.diff
 lp2143073.patch
 meson-check-TLSDESC-support-with-a-shared-library.patch
+do-not-use-D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1.patch

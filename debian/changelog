@@ -5,6 +5,8 @@ mesa (26.2.7-1) UNRELEASED; urgency=medium
     - Add patch to ensure platforms without TLSDESC don't try to use it.
       Closes: #1153522.
   * debian/patches/src_glx_dri_common.h.diff: refreshed.
+  * d/p/do-not-use-D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1.patch:
+    - Fix FTBFS on the d3d12 gallium driver. Closes: #1154462.
 
  -- Emilio Pozuelo Monfort <pochu@debian.org>  Mon, 23 Nov 2026 18:01:24 +0100
 
