@@ -1,6 +1,9 @@
 mesa (26.2.7-1) UNRELEASED; urgency=medium
 
   * New upstream release.
+  * debian/patches/meson-check-TLSDESC-support-with-a-shared-library.patch:
+    - Add patch to ensure platforms without TLSDESC don't try to use it.
+      Closes: #1153522.
 
  -- Emilio Pozuelo Monfort <pochu@debian.org>  Mon, 23 Nov 2026 18:01:24 +0100
 
